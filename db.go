@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"log"
+	"os"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
@@ -14,6 +16,10 @@ var (
 )
 
 func OpenDatabase() {
+	_, debug := os.LookupEnv("DEBUG")
+	if debug {
+		os.Remove("db.sqlite")
+	}
 	db = sqlx.MustConnect("sqlite3", "file:db.sqlite?fk=true")
 }
 
@@ -132,4 +138,48 @@ func StoreData(data *Data) {
 	if err := tx.Commit(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func GetLatestData() Data {
+	var err error
+	campaignStatus := CampaignStatus{}
+	err = db.Get(&campaignStatus, "SELECT * FROM campaign_status ORDER BY time DESC LIMIT 1")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	factionStatus := []FactionStatus{}
+	defendEvent := DefendEvent{}
+	attackEvents := []AttackEvent{}
+	statistics := []Statistics{}
+
+	tx := db.MustBegin()
+	err = tx.Select(&factionStatus, "SELECT * FROM faction_status WHERE time=? ORDER BY introduction_order ASC", campaignStatus.Time)
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = tx.Get(&defendEvent, "SELECT * FROM defend_events WHERE time=?", campaignStatus.Time)
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = tx.Select(&attackEvents, "SELECT * FROM attack_events WHERE time=? ORDER BY enemy ASC", campaignStatus.Time)
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = tx.Select(&statistics, "SELECT * FROM statistics WHERE time=? ORDER BY enemy ASC", campaignStatus.Time)
+	if err != nil {
+		fmt.Println(err)
+	}
+	tx.Commit()
+
+	data := Data{
+		Time:          campaignStatus.Time,
+		Error:         campaignStatus.Error,
+		FactionStatus: factionStatus,
+		DefendEvent:   defendEvent,
+		AttackEvents:  attackEvents,
+		Statistics:    statistics,
+	}
+
+	return data
 }

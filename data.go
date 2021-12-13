@@ -9,6 +9,7 @@ import (
 )
 
 type FactionStatus struct {
+	Time              int    `json:"-" db:"time"`
 	Season            int    `json:"season" db:"season"`
 	Points            int    `json:"points" db:"points"`
 	PointsTaken       int    `json:"points_taken" db:"points_taken"`
@@ -17,7 +18,8 @@ type FactionStatus struct {
 	IntroductionOrder int    `json:"introduction_order" db:"introduction_order"`
 }
 
-type Event struct {
+type DefendEvent struct {
+	Time      int    `json:"-" db:"time"`
 	Season    int    `json:"season" db:"season"`
 	ID        int    `json:"event_id" db:"event_id"`
 	StartTime int    `json:"start_time" db:"start_time"`
@@ -26,20 +28,25 @@ type Event struct {
 	PointsMax int    `json:"points_max" db:"points_max"`
 	Points    int    `json:"points" db:"points"`
 	Status    string `json:"status" db:"status"`
-}
-
-type DefendEvent struct {
-	Event
-	Region int `json:"region" db:"region"`
+	Region    int    `json:"region" db:"region"`
 }
 
 type AttackEvent struct {
-	Event
-	PlayersAtStart int `json:"players_at_start" db:"players_at_start"`
-	MaxEventId     int `json:"max_event_id" db:"max_event_id"`
+	Time           int    `json:"-" db:"time"`
+	Season         int    `json:"season" db:"season"`
+	ID             int    `json:"event_id" db:"event_id"`
+	StartTime      int    `json:"start_time" db:"start_time"`
+	EndTime        int    `json:"end_time" db:"end_time"`
+	Enemy          int    `json:"enemy" db:"enemy"`
+	PointsMax      int    `json:"points_max" db:"points_max"`
+	Points         int    `json:"points" db:"points"`
+	Status         string `json:"status" db:"status"`
+	PlayersAtStart int    `json:"players_at_start" db:"players_at_start"`
+	MaxEventId     int    `json:"max_event_id" db:"max_event_id"`
 }
 
 type Statistics struct {
+	Time                   int `json:"-" db:"time"`
 	Season                 int `json:"season" db:"season"`
 	SeasonDuration         int `json:"season_duration" db:"season_duration"`
 	Enemy                  int `json:"enemy" db:"enemy"`
@@ -61,16 +68,17 @@ type Statistics struct {
 }
 
 type CampaignStatus struct {
-	Time  int `json:"time" db:"time"`
-	Error int `json:"error_code" db:"error_code"`
+	Time  int `db:"time"`
+	Error int `db:"error"`
 }
 
 type Data struct {
-	CampaignStatus
-	FactionStatus [3]FactionStatus `json:"campaign_status" db:"campaign_status"`
-	DefendEvent   DefendEvent      `json:"defend_event" db:"defend_event"`
-	AttackEvents  [3]AttackEvent   `json:"attack_events" db:"attack_events"`
-	Statistics    [3]Statistics    `json:"statistics" db:"statistics"`
+	Time          int             `json:"time"`
+	Error         int             `json:"error_code"`
+	FactionStatus []FactionStatus `json:"campaign_status"`
+	DefendEvent   DefendEvent     `json:"defend_event"`
+	AttackEvents  []AttackEvent   `json:"attack_events"`
+	Statistics    []Statistics    `json:"statistics"`
 }
 
 func FetchData() (*Data, error) {
