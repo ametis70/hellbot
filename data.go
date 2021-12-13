@@ -22,7 +22,6 @@ type Event struct {
 	ID        int    `json:"event_id"`
 	StartTime int    `json:"start_time"`
 	EndTime   int    `json:"end_time"`
-	Region    int    `json:"region"`
 	Enemy     int    `json:"enemy"`
 	PointsMax int    `json:"points_max"`
 	Points    int    `json:"points"`
@@ -62,12 +61,12 @@ type Statistics struct {
 }
 
 type Data struct {
-	Time           int              `json:"time"`
-	Error          int              `json:"error_code"`
-	CampaignStatus [3]FactionStatus `json:"campaign_status"`
-	DefendEvent    DefendEvent      `json:"defend_event"`
-	AttackEvents   [3]AttackEvent   `json:"attack_events"`
-	Statistics     [3]Statistics    `json:"statistics"`
+	Time          int              `json:"time"`
+	Error         int              `json:"error_code"`
+	FactionStatus [3]FactionStatus `json:"campaign_status"`
+	DefendEvent   DefendEvent      `json:"defend_event"`
+	AttackEvents  [3]AttackEvent   `json:"attack_events"`
+	Statistics    [3]Statistics    `json:"statistics"`
 }
 
 func FetchData() (*Data, error) {
