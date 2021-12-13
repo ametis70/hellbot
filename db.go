@@ -5,22 +5,29 @@ import (
 	"database/sql"
 	"html/template"
 	"log"
-	"os"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var db *sql.DB
+var (
+	db *sql.DB
+)
 
-func InitDatabase() {
-	os.Remove("db.sqlite")
+func OpenDatabase() {
+	var err error
 
-	db, err := sql.Open("sqlite3", "file:db.sqlite?fk=true")
+	db, err = sql.Open("sqlite3", "file:db.sqlite?fk=true")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
 
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+}
+
+func InitDatabase() {
 	foreignKeySchema := `
     time INTEGER,
     FOREIGN KEY(time) REFERENCES campaign_status(time) ON UPDATE CASCADE ON DELETE CASCADE`
@@ -36,12 +43,12 @@ func InitDatabase() {
     status TEXT`
 
 	s := `
-CREATE TABLE campaign_status (
+CREATE TABLE IF NOT EXISTS campaign_status (
     time INTEGER UNIQUE NOT NULL PRIMARY KEY,
     error integer not null
 );
 
-CREATE TABLE faction_status (
+CREATE TABLE IF NOT EXISTS faction_status (
     season INTEGER,
     points INTEGER,
     points_taken INTEGER,
@@ -50,16 +57,16 @@ CREATE TABLE faction_status (
     introduction_order INTEGER,{{.fk}}
 );
 
-CREATE TABLE attack_events ({{.event}},
+CREATE TABLE IF NOT EXISTS attack_events ({{.event}},
     players_at_start INTEGER,
     max_event_id INTEGER,{{.fk}}
 );
 
-CREATE TABLE defend_events ({{.event}},
+CREATE TABLE IF NOT EXISTS defend_events ({{.event}},
     region INTEGER,{{.fk}}
 );
 
-CREATE TABLE statistics (
+CREATE TABLE IF NOT EXISTS statistics (
     season INTEGER,
     season_duration INTEGER, 
     enemy INTEGER,
@@ -84,7 +91,7 @@ CREATE TABLE statistics (
 	var sqlStmt bytes.Buffer
 	t := template.Must(template.New("s").Parse(s))
 	t.Execute(&sqlStmt, map[string]interface{}{"fk": foreignKeySchema, "event": eventSchema})
-	_, err = db.Exec(sqlStmt.String(), foreignKeySchema, eventSchema)
+	_, err := db.Exec(sqlStmt.String(), foreignKeySchema, eventSchema)
 
 	if err != nil {
 		log.Printf("%q: %s\n", err, sqlStmt)
@@ -93,13 +100,6 @@ CREATE TABLE statistics (
 }
 
 func StoreData(data *Data) {
-	db, err := sql.Open("sqlite3", "file:db.sqlite?fk=true")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer db.Close()
-
 	tx, err := db.Begin()
 
 	if err != nil {
