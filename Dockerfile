@@ -1,4 +1,5 @@
 FROM golang:1.17.5-alpine3.15
+LABEL org.opencontainers.image.source="https://github.com/ametis70/hellbot"
 
 RUN apk add build-base
 
