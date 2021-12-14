@@ -1,74 +1,98 @@
 package main
 
 import (
-	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
+	_ "github.com/joho/godotenv/autoload"
 )
 
-// Variables used for command line parameters
 var (
-	Token string
+	dg *discordgo.Session
 )
 
-func init() {
+func loop() {
+	defer time.AfterFunc(time.Second*60, loop)
 
-	flag.StringVar(&Token, "t", "", "Bot Token")
-	flag.Parse()
+	data, err := FetchData()
+	if err != nil {
+		log.Println("Failed to fetch data, skipping iteration")
+		return
+	}
+
+	pData, err := GetLatestData()
+	StoreData(data)
+
+	if err != nil {
+		log.Println("There's no previous data to compare, skipping iteration")
+		return
+	}
+
+	channel := os.Getenv("CHANNEL_ID")
+
+	if (pData.DefendEvent.Status != data.DefendEvent.Status) ||
+		(pData.DefendEvent.ID != data.DefendEvent.ID) {
+		p := pData.DefendEvent
+		n := data.DefendEvent
+
+		switch n.Status {
+		case "active":
+			if p.Status == "failure" || p.Status == "success" || p.ID != p.ID {
+				msg := fmt.Sprintf("New defend event against %v in region %v\nStart Time: %v\nEnd time: %v\nID: %v",
+					n.Enemy, n.Region, time.Unix(int64(n.StartTime), 0).UTC(), time.Unix(int64(n.EndTime), 0).UTC(), n.ID)
+				dg.ChannelMessageSend(channel, msg)
+			}
+
+		case "failure":
+			if p.Status == "active" && p.ID == n.ID {
+				msg := fmt.Sprintf("We failed! the %v have taken back region %v\nID: %v",
+					n.Enemy, n.Region, n.ID)
+				dg.ChannelMessageSend(channel, msg)
+			}
+
+		case "success":
+			if p.Status == "active" && p.ID == n.ID {
+				msg := fmt.Sprintf("We did it! Super Earth has conquered region %v against %v\nID: %v",
+					n.Region, n.Enemy, n.ID)
+				dg.ChannelMessageSend(channel, msg)
+			}
+
+		}
+	}
 }
 
 func main() {
+	db = OpenDatabase()
+	defer db.Close()
 
-	// Create a new Discord session using the provided bot token.
-	dg, err := discordgo.New("Bot " + Token)
+	InitDatabase()
+
+	token := os.Getenv("TOKEN")
+
+	var err error
+	dg, err = discordgo.New("Bot " + token)
 	if err != nil {
-		fmt.Println("error creating Discord session,", err)
+		fmt.Println("Error creating Discord session,", err)
 		return
 	}
+	defer dg.Close()
 
-	// Register the messageCreate func as a callback for MessageCreate events.
-	dg.AddHandler(messageCreate)
-
-	// In this example, we only care about receiving message events.
 	dg.Identify.Intents = discordgo.IntentsGuildMessages
-
-	// Open a websocket connection to Discord and begin listening.
 	err = dg.Open()
 	if err != nil {
-		fmt.Println("error opening connection,", err)
+		fmt.Println("Error opening connection,", err)
 		return
 	}
 
-	// Wait here until CTRL-C or other term signal is received.
-	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
+	loop()
+
+	fmt.Println("Bot is now running.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
-
-	// Cleanly close down the Discord session.
-	dg.Close()
-}
-
-// This function will be called (due to AddHandler above) every time a new
-// message is created on any channel that the authenticated bot has access to.
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	// Ignore all messages created by the bot itself
-	// This isn't required in this specific example but it's a good practice.
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-	// If the message is "ping" reply with "Pong!"
-	if m.Content == "ping" {
-		s.ChannelMessageSend(m.ChannelID, "Pong!")
-	}
-
-	// If the message is "pong" reply with "Ping!"
-	if m.Content == "pong" {
-		s.ChannelMessageSend(m.ChannelID, "Ping!")
-	}
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"log"
 	"os"
@@ -15,12 +14,14 @@ var (
 	db *sqlx.DB
 )
 
-func OpenDatabase() {
+func OpenDatabase() *sqlx.DB {
 	_, debug := os.LookupEnv("DEBUG")
 	if debug {
 		os.Remove("db.sqlite")
 	}
+
 	db = sqlx.MustConnect("sqlite3", "file:db.sqlite?fk=true")
+	return db
 }
 
 func InitDatabase() {
@@ -90,7 +91,7 @@ CREATE TABLE IF NOT EXISTS statistics (
 	db.MustExec(sqlStmt.String(), foreignKeySchema, eventSchema)
 }
 
-func StoreData(data *Data) {
+func StoreData(data *Data) error {
 	tx := db.MustBegin()
 	tx.MustExec("INSERT INTO campaign_status (time, error) VALUES (?, ?)", data.Time, data.Error)
 
@@ -136,16 +137,18 @@ func StoreData(data *Data) {
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return err
 	}
+	return nil
 }
 
-func GetLatestData() Data {
+func GetLatestData() (*Data, error) {
 	var err error
 	campaignStatus := CampaignStatus{}
 	err = db.Get(&campaignStatus, "SELECT * FROM campaign_status ORDER BY time DESC LIMIT 1")
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
 
 	factionStatus := []FactionStatus{}
@@ -156,19 +159,23 @@ func GetLatestData() Data {
 	tx := db.MustBegin()
 	err = tx.Select(&factionStatus, "SELECT * FROM faction_status WHERE time=? ORDER BY introduction_order ASC", campaignStatus.Time)
 	if err != nil {
-		fmt.Println(err)
+		log.Print("Failed to retrieve faction_status data")
+		return nil, err
 	}
 	err = tx.Get(&defendEvent, "SELECT * FROM defend_events WHERE time=?", campaignStatus.Time)
 	if err != nil {
-		fmt.Println(err)
+		log.Print("Failed to retrieve defend_event data")
+		return nil, err
 	}
 	err = tx.Select(&attackEvents, "SELECT * FROM attack_events WHERE time=? ORDER BY enemy ASC", campaignStatus.Time)
 	if err != nil {
-		fmt.Println(err)
+		log.Print("Failed to retrieve attack_events data")
+		return nil, err
 	}
 	err = tx.Select(&statistics, "SELECT * FROM statistics WHERE time=? ORDER BY enemy ASC", campaignStatus.Time)
 	if err != nil {
-		fmt.Println(err)
+		log.Print("Failed to retrieve statistics data")
+		return nil, err
 	}
 	tx.Commit()
 
@@ -181,5 +188,5 @@ func GetLatestData() Data {
 		Statistics:    statistics,
 	}
 
-	return data
+	return &data, nil
 }

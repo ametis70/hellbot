@@ -26,3 +26,4 @@
 
 hellbot
 *.sqlite
+.env
