@@ -27,3 +27,5 @@
 hellbot
 *.sqlite
 .env
+
+package.json
