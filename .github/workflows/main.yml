@@ -4,10 +4,16 @@ on:
   push:
     branches: [main]
 
+  release:
+    branches: [main]
+    types: [published]
+
 jobs:
   ghr_push:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if:
+      github.event_name == 'release' || github.event_name == 'push' &&
+      contains(toJSON(github.event.commits.*.message), '[feat:, fix:]')
 
     steps:
       - name: checkout
@@ -28,15 +34,14 @@ jobs:
       - name: Build and push container image
         run: |
           IMAGE_ID=$(echo ghcr.io/${{ github.repository }} | tr '[A-Z]' '[a-z]')
-          # Strip git ref prefix from version
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-          # Strip "v" prefix from tag name
+
           [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-          # when the branch is master, replace master with latest
           [ "$VERSION" == "main" ] && VERSION=latest
+
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
-          # Build and Publish container image
+
           docker buildx build --push \
           --tag $IMAGE_ID:$VERSION \
           --platform linux/amd64,linux/arm/v7,linux/arm64 .
