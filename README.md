@@ -1,7 +1,7 @@
 # hellbot
 hellbot is a [HELLDIVERS™](https://www.arrowheadgamestudios.com/aboutarrowhead/games/helldivers/) [Discord](https://discord.com/) bot
 
-> Scientists Super Earth has developed a new stratagem. The BOT-21 'Hellbot' will broadcast interdimensional messages to gather all the Helldivers willing to participate in the Galactic Campaign.
+> Scientists of Super Earth have developed a new stratagem. The BOT-21 'Hellbot' will broadcast interdimensional messages to gather all the Helldivers willing to participate in the Galactic Campaign.
 
 ## What does this bot do
 
