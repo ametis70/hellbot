@@ -160,6 +160,18 @@ func GetDefendEventById(id int) (*DefendEvent, error) {
 	return &defendEvent, nil
 }
 
+func GetAttackEventById(id int) (*AttackEvent, error) {
+	attackEvent := AttackEvent{}
+	err := db.Get(&attackEvent, "SELECT * FROM attack_events WHERE id=?", id)
+
+	if err != nil {
+		log.Println("Failed to retrieve attack_event data")
+		return nil, err
+	}
+
+	return &attackEvent, nil
+}
+
 func GetLatestData() (*Data, error) {
 	var err error
 	campaignStatus := CampaignStatus{}
