@@ -143,6 +143,18 @@ func StoreData(data *Data) error {
 	return nil
 }
 
+func GetDefendEventById(id int) (*DefendEvent, error) {
+	defendEvent := DefendEvent{}
+	err := db.Get(&defendEvent, "SELECT * FROM defend_events WHERE id=?", id)
+
+	if err != nil {
+		log.Print("Failed to retrieve defend_event data")
+		return nil, err
+	}
+
+	return &defendEvent, nil
+}
+
 func GetLatestData() (*Data, error) {
 	var err error
 	campaignStatus := CampaignStatus{}
