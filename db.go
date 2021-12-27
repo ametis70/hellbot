@@ -83,6 +83,11 @@ CREATE TABLE IF NOT EXISTS statistics (
     shots INTEGER,
     hits INTEGER,{{.fk}}
 );
+
+CREATE TABLE IF NOT EXISTS ongoing_events (
+    id INTEGER PRIMARY_KEY,
+    event_type TEXT
+)
 `
 
 	var sqlStmt bytes.Buffer
