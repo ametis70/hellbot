@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS statistics (
 );
 
 CREATE TABLE IF NOT EXISTS ongoing_events (
-    id INTEGER PRIMARY_KEY,
+    event_id INTEGER PRIMARY_KEY,
     event_type TEXT
 )
 `
@@ -150,7 +150,7 @@ func StoreData(data *Data) error {
 
 func GetDefendEventById(id int) (*DefendEvent, error) {
 	defendEvent := DefendEvent{}
-	err := db.Get(&defendEvent, "SELECT * FROM defend_events WHERE id=?", id)
+	err := db.Get(&defendEvent, "SELECT * FROM defend_events WHERE event_id=?", id)
 
 	if err != nil {
 		log.Print("Failed to retrieve defend_event data")
@@ -162,7 +162,7 @@ func GetDefendEventById(id int) (*DefendEvent, error) {
 
 func GetAttackEventById(id int) (*AttackEvent, error) {
 	attackEvent := AttackEvent{}
-	err := db.Get(&attackEvent, "SELECT * FROM attack_events WHERE id=?", id)
+	err := db.Get(&attackEvent, "SELECT * FROM attack_events WHERE event_id=?", id)
 
 	if err != nil {
 		log.Println("Failed to retrieve attack_event data")

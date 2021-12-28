@@ -16,20 +16,20 @@ const (
 )
 
 type OngoingEvent struct {
-	ID        int    `db:"id"`
+	ID        int    `db:"event_id"`
 	EventType string `db:"event_type"`
 }
 
 func storeOngoingEvent(id int, eventType string) error {
 	_, err := db.Exec(
-		`INSERT INTO ongoing_events (id, event_type) VALUES (?, ?)`, id, eventType)
+		`INSERT INTO ongoing_events (event_id, event_type) VALUES (?, ?)`, id, eventType)
 
 	return err
 }
 
 func removeOngoingEvent(id int, eventType string) error {
 	_, err := db.Exec(
-		`DELETE FROM ongoing_events WHERE id=? AND event_type=?`, id, eventType)
+		`DELETE FROM ongoing_events WHERE event_id=? AND event_type=?`, id, eventType)
 
 	return err
 }
@@ -48,7 +48,7 @@ func getOngoingEvents() ([]*OngoingEvent, error) {
 func getOngoingEvent(id int, eventType string) (*OngoingEvent, error) {
 	ongoingEvents := OngoingEvent{}
 	err := db.Get(&ongoingEvents,
-		"SELECT * FROM ongoing_events WHERE id=? AND event_type=?", id, eventType)
+		"SELECT * FROM ongoing_events WHERE event_id=? AND event_type=?", id, eventType)
 
 	if err != nil {
 		return nil, err
