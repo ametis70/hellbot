@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 )
@@ -92,7 +91,7 @@ func sendDefendMessage(mt messageType, data *DefendEvent) {
 	_, err := dg.ChannelMessageSend(discordChannel, msg)
 
 	if err != nil {
-		log.Print("An error has ocurred while sending message")
+		logger.Error("An error has ocurred while sending message: ", err)
 	}
 }
 
@@ -112,7 +111,7 @@ func handleDefendEvent(data *DefendEvent) {
 	storedEventData, err := GetDefendEventById(storedEvent.ID)
 
 	if err != nil {
-		log.Println("Error retrieving stored event data")
+		logger.Error("Error retrieving stored event data: ", err)
 	}
 
 	// Handle event with new id

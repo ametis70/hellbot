@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/tls"
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/url"
 )
@@ -100,7 +99,7 @@ func FetchData() (*Data, error) {
 	resp, httpErr := client.PostForm(endpoint, formData)
 
 	if httpErr != nil {
-		log.Fatalln(httpErr)
+		logger.Error("Error ocurred while fetching API data: ", httpErr)
 		return nil, httpErr
 	}
 
@@ -110,7 +109,7 @@ func FetchData() (*Data, error) {
 	jsonErr := decoder.Decode(&data)
 
 	if jsonErr != nil {
-		log.Fatalln(jsonErr)
+		logger.Error("Error ocurred while decoding JSON: ", jsonErr)
 		return nil, jsonErr
 	}
 

@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"html/template"
-	"log"
 	"os"
 
 	"github.com/jmoiron/sqlx"
@@ -142,7 +141,7 @@ func StoreData(data *Data) error {
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.Print(err)
+		logger.Error("Error in transaction: ", err)
 		return err
 	}
 	return nil
@@ -153,7 +152,7 @@ func GetDefendEventById(id int) (*DefendEvent, error) {
 	err := db.Get(&defendEvent, "SELECT * FROM defend_events WHERE event_id=?", id)
 
 	if err != nil {
-		log.Print("Failed to retrieve defend_event data")
+		logger.Error("Failed to retrieve defend_event data: ", err)
 		return nil, err
 	}
 
@@ -165,7 +164,7 @@ func GetAttackEventById(id int) (*AttackEvent, error) {
 	err := db.Get(&attackEvent, "SELECT * FROM attack_events WHERE event_id=?", id)
 
 	if err != nil {
-		log.Println("Failed to retrieve attack_event data")
+		logger.Error("Failed to retrieve attack_event data: ", err)
 		return nil, err
 	}
 
@@ -188,22 +187,22 @@ func GetLatestData() (*Data, error) {
 	tx := db.MustBegin()
 	err = tx.Select(&factionStatus, "SELECT * FROM faction_status WHERE time=? ORDER BY introduction_order ASC", campaignStatus.Time)
 	if err != nil {
-		log.Print("Failed to retrieve faction_status data")
+		logger.Error("Failed to retrieve faction_status data: ", err)
 		return nil, err
 	}
 	err = tx.Get(&defendEvent, "SELECT * FROM defend_events WHERE time=?", campaignStatus.Time)
 	if err != nil {
-		log.Print("Failed to retrieve defend_event data")
+		logger.Error("Failed to retrieve defend_event data: ", err)
 		return nil, err
 	}
 	err = tx.Select(&attackEvents, "SELECT * FROM attack_events WHERE time=? ORDER BY enemy ASC", campaignStatus.Time)
 	if err != nil {
-		log.Print("Failed to retrieve attack_events data")
+		logger.Error("Failed to retrieve attack_events data: ", err)
 		return nil, err
 	}
 	err = tx.Select(&statistics, "SELECT * FROM statistics WHERE time=? ORDER BY enemy ASC", campaignStatus.Time)
 	if err != nil {
-		log.Print("Failed to retrieve statistics data")
+		logger.Error("Failed to retrieve statistics data: ", err)
 		return nil, err
 	}
 	tx.Commit()
