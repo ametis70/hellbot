@@ -5,6 +5,7 @@ RUN apk add build-base
 
 WORKDIR /app
 COPY . .
+VOLUME /app/db
 
 RUN go get -d -v ./...
 RUN go install -v ./...

@@ -19,7 +19,7 @@ func OpenDatabase() *sqlx.DB {
 		os.Remove("db.sqlite")
 	}
 
-	db = sqlx.MustConnect("sqlite3", "file:db.sqlite?fk=true")
+	db = sqlx.MustConnect("sqlite3", "file:./db/db.sqlite?fk=true")
 	return db
 }
 
