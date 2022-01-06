@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS ongoing_events (
 	db.MustExec(sqlStmt.String(), foreignKeySchema, eventSchema)
 }
 
-func StoreData(data *Data) error {
+func StoreGalacticCampaign(data *CampaignStatus) error {
 	tx := db.MustBegin()
 	tx.MustExec("INSERT INTO campaign_status (time, error) VALUES (?, ?)", data.Time, data.Error)
 
@@ -171,9 +171,9 @@ func GetAttackEventById(id int) (*AttackEvent, error) {
 	return &attackEvent, nil
 }
 
-func GetLatestData() (*Data, error) {
+func GetLatestStoredGalacticCampaign() (*CampaignStatus, error) {
 	var err error
-	campaignStatus := CampaignStatus{}
+	campaignStatus := DBMetadataFields{}
 	err = db.Get(&campaignStatus, "SELECT * FROM campaign_status ORDER BY time DESC LIMIT 1")
 	if err != nil {
 		return nil, err
@@ -207,7 +207,7 @@ func GetLatestData() (*Data, error) {
 	}
 	tx.Commit()
 
-	data := Data{
+	data := CampaignStatus{
 		Time:          campaignStatus.Time,
 		Error:         campaignStatus.Error,
 		FactionStatus: factionStatus,
