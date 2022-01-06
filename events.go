@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type messageType uint8
@@ -54,6 +56,30 @@ func getOngoingEvent(id int, eventType string) (*OngoingEvent, error) {
 	}
 
 	return &ongoingEvents, nil
+}
+
+func getDefendEventStatusFromSnapshot(season int, id int) (string, error) {
+	data, err := FetchSnapshot(season)
+
+	if err != nil {
+		return "", err
+	}
+
+	var status string
+
+	for _, e := range data.DefendEvents {
+		if e.ID == id {
+			status = e.Status
+			break
+		} else {
+			logger.Errorw(
+				"Defend ID not found in snapshot",
+				zap.Int("season", season),
+				zap.Int("id", e.ID),
+			)
+		}
+	}
+	return status, nil
 }
 
 func sendDefendMessage(mt messageType, data *DefendEvent) {
@@ -116,19 +142,22 @@ func handleDefendEvent(data *DefendEvent) {
 
 	// Handle event with new id
 	if storedEvent.ID != data.ID {
-		switch data.Status {
-		case "success":
-			if storedEventData != nil {
-				sendDefendMessage(eventSuccess, storedEventData)
-			}
+		snapshotStatus, _ := getDefendEventStatusFromSnapshot(
+			storedEventData.Season,
+			storedEventData.ID,
+		)
 
-		case "fail", "active":
-			storeOngoingEvent(data.ID, "defend")
-			if storedEventData != nil {
+		if storedEventData != nil && snapshotStatus != "" {
+			switch snapshotStatus {
+			case "success":
+				sendDefendMessage(eventSuccess, storedEventData)
+			case "fail":
 				sendDefendMessage(eventFail, storedEventData)
 			}
-			sendDefendMessage(eventNew, data)
 		}
+
+		storeOngoingEvent(data.ID, "defend")
+		sendDefendMessage(eventNew, data)
 
 		// Remove old event
 		removeOngoingEvent(storedEvent.ID, "defend")
