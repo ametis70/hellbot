@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 )
@@ -18,16 +19,17 @@ type FactionStatus struct {
 }
 
 type DefendEvent struct {
-	Time      int    `json:"-" db:"time"`
-	Season    int    `json:"season" db:"season"`
-	ID        int    `json:"event_id" db:"event_id"`
-	StartTime int    `json:"start_time" db:"start_time"`
-	EndTime   int    `json:"end_time" db:"end_time"`
-	Enemy     int    `json:"enemy" db:"enemy"`
-	PointsMax int    `json:"points_max" db:"points_max"`
-	Points    int    `json:"points" db:"points"`
-	Status    string `json:"status" db:"status"`
-	Region    int    `json:"region" db:"region"`
+	Time           int    `json:"-" db:"time"`
+	Season         int    `json:"season" db:"season"`
+	ID             int    `json:"event_id" db:"event_id"`
+	StartTime      int    `json:"start_time" db:"start_time"`
+	EndTime        int    `json:"end_time" db:"end_time"`
+	Enemy          int    `json:"enemy" db:"enemy"`
+	PointsMax      int    `json:"points_max" db:"points_max"`
+	Points         int    `json:"points" db:"points"`
+	Status         string `json:"status" db:"status"`
+	Region         int    `json:"region" db:"region"`
+	PlayersAtStart int    `json:"players_at_start" db:"players_at_start"`
 }
 
 type AttackEvent struct {
@@ -66,12 +68,12 @@ type Statistics struct {
 	Hits                   int `json:"hits" db:"hits"`
 }
 
-type CampaignStatus struct {
+type DBMetadataFields struct {
 	Time  int `db:"time"`
 	Error int `db:"error"`
 }
 
-type Data struct {
+type CampaignStatus struct {
 	Time          int             `json:"time"`
 	Error         int             `json:"error_code"`
 	FactionStatus []FactionStatus `json:"campaign_status"`
@@ -80,9 +82,21 @@ type Data struct {
 	Statistics    []Statistics    `json:"statistics"`
 }
 
-func FetchData() (*Data, error) {
-	data := Data{}
+type Snapshot struct {
+	Time              int    `json:"time"`
+	Error             int    `json:"error_code"`
+	IntroductionOrder []int8 `json:"introduction_order"`
+	PointsMax         []int  `json:"points_max"`
+	Snapshots         []struct {
+		Season int    `json:"season"`
+		Time   int    `json:"time"`
+		Data   string `json:"data"`
+	} `json:"snapshots"`
+	DefendEvents []DefendEvent `json:"defend_events"`
+	AttackEvents []AttackEvent `json:"attack_events"`
+}
 
+func Fetch(formData url.Values) (*json.Decoder, error) {
 	// Workaround for self-signed certificate
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -91,10 +105,6 @@ func FetchData() (*Data, error) {
 
 	// Get data
 	endpoint := "https://api.helldiversgame.com/1.0/"
-
-	formData := url.Values{
-		"action": {"get_campaign_status"},
-	}
 
 	resp, httpErr := client.PostForm(endpoint, formData)
 
@@ -106,6 +116,44 @@ func FetchData() (*Data, error) {
 	// Decode data
 	decoder := json.NewDecoder(resp.Body)
 	decoder.DisallowUnknownFields()
+	return decoder, nil
+}
+
+func FetchGalacticCampaign() (*CampaignStatus, error) {
+	data := CampaignStatus{}
+	formData := url.Values{
+		"action": {"get_campaign_status"},
+	}
+
+	decoder, err := Fetch(formData)
+
+	if err != nil {
+		return nil, err
+	}
+
+	jsonErr := decoder.Decode(&data)
+
+	if jsonErr != nil {
+		logger.Error("Error ocurred while decoding JSON: ", jsonErr)
+		return nil, jsonErr
+	}
+
+	return &data, nil
+}
+
+func FetchSnapshot(season int) (*Snapshot, error) {
+	data := Snapshot{}
+	formData := url.Values{
+		"action": {"get_snapshots"},
+		"season": {fmt.Sprint(season)},
+	}
+
+	decoder, err := Fetch(formData)
+
+	if err != nil {
+		return nil, err
+	}
+
 	jsonErr := decoder.Decode(&data)
 
 	if jsonErr != nil {

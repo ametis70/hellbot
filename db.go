@@ -14,9 +14,12 @@ var (
 )
 
 func OpenDatabase() *sqlx.DB {
+
+	os.Mkdir("./db/", 0755)
+
 	_, debug := os.LookupEnv("DEBUG")
 	if debug {
-		os.Remove("db.sqlite")
+		os.Remove("./db/db.sqlite")
 	}
 
 	db = sqlx.MustConnect("sqlite3", "file:./db/db.sqlite?fk=true")

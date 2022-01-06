@@ -19,13 +19,13 @@ var (
 func loop() {
 	defer time.AfterFunc(time.Second*60, loop)
 
-	data, err := FetchData()
+	data, err := FetchGalacticCampaign()
 	if err != nil {
 		logger.Warn("Failed to fetch data, skipping iteration")
 		return
 	}
 
-	StoreData(data)
+	StoreGalacticCampaign(data)
 	HandleEvents(data)
 }
 

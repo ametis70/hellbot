@@ -135,6 +135,6 @@ func handleDefendEvent(data *DefendEvent) {
 	}
 }
 
-func HandleEvents(data *Data) {
+func HandleEvents(data *CampaignStatus) {
 	handleDefendEvent(&data.DefendEvent)
 }
