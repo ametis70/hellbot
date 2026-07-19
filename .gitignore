@@ -28,4 +28,10 @@ hellbot
 *.sqlite
 .env
 
+# nix
+result
+result-*
+
 package.json
+
+.direnv
