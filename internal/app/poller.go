@@ -61,7 +61,10 @@ func (p *Poller) poll() {
 	if err != nil {
 		p.logger.Warn("no previous campaign stored, skipping event detection")
 	} else {
-		p.handleEvents(current, previous)
+		changed := p.handleEvents(current, previous)
+		if !changed {
+			p.logger.Info("no changes since last fetch")
+		}
 	}
 
 	if err := p.campaigns.SaveCampaign(current); err != nil {
@@ -77,16 +80,18 @@ func (p *Poller) notify(msg domain.EventMessage) {
 	}
 }
 
-func (p *Poller) handleEvents(current, previous *domain.CampaignStatus) {
-	p.handleDefendEvent(current)
-	p.handleAttackEvents(current)
+func (p *Poller) handleEvents(current, previous *domain.CampaignStatus) bool {
+	defendEventsChanged := p.handleDefendEvent(current)
+	attackEventsChanged := p.handleAttackEvents(current)
+
+	return defendEventsChanged || attackEventsChanged
 }
 
-func (p *Poller) handleDefendEvent(current *domain.CampaignStatus) {
+func (p *Poller) handleDefendEvent(current *domain.CampaignStatus) bool {
 	stored, err := p.events.ListOngoingEvents(domain.EventKindDefend)
 	if err != nil {
 		p.logger.Error("failed to list ongoing defend events", "error", err)
-		return
+		return false
 	}
 
 	// at most one defend event at a time
@@ -96,7 +101,7 @@ func (p *Poller) handleDefendEvent(current *domain.CampaignStatus) {
 	}
 
 	if current.DefendEvent == nil && storedEvent == nil {
-		return
+		return false
 	}
 
 	if current.DefendEvent != nil && storedEvent == nil {
@@ -106,12 +111,12 @@ func (p *Poller) handleDefendEvent(current *domain.CampaignStatus) {
 			Transition:  domain.EventTransitionStarted,
 			DefendEvent: current.DefendEvent,
 		})
-		return
+		return true
 	}
 
 	if current.DefendEvent == nil && storedEvent != nil {
 		p.events.RemoveOngoingEvent(storedEvent.ID, domain.EventKindDefend)
-		return
+		return true
 	}
 
 	if current.DefendEvent.ID != storedEvent.ID {
@@ -122,14 +127,17 @@ func (p *Poller) handleDefendEvent(current *domain.CampaignStatus) {
 			Transition:  domain.EventTransitionStarted,
 			DefendEvent: current.DefendEvent,
 		})
+		return true
 	}
+
+	return false
 }
 
-func (p *Poller) handleAttackEvents(current *domain.CampaignStatus) {
+func (p *Poller) handleAttackEvents(current *domain.CampaignStatus) bool {
 	stored, err := p.events.ListOngoingEvents(domain.EventKindAttack)
 	if err != nil {
 		p.logger.Error("failed to list ongoing attack events", "error", err)
-		return
+		return false
 	}
 
 	// build map of current active attack IDs for O(1) lookup
@@ -140,10 +148,13 @@ func (p *Poller) handleAttackEvents(current *domain.CampaignStatus) {
 		}
 	}
 
+	changed := false
+
 	// stored events not in current → ended
 	for _, s := range stored {
 		if _, stillActive := currentActive[s.ID]; !stillActive {
 			p.events.RemoveOngoingEvent(s.ID, domain.EventKindAttack)
+			changed = true
 			// outcome unknown without snapshot — skip notify for now
 		}
 	}
@@ -166,6 +177,8 @@ func (p *Poller) handleAttackEvents(current *domain.CampaignStatus) {
 				Transition:  domain.EventTransitionStarted,
 				AttackEvent: &attackCopy,
 			})
+			changed = true
 		}
 	}
+	return changed
 }

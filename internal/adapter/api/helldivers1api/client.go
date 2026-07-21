@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"time"
@@ -26,16 +27,23 @@ func DefaultOptions() Options {
 }
 
 type Client struct {
-	opts Options
-	http *http.Client
+	opts   Options
+	http   *http.Client
+	logger *slog.Logger
 }
 
-func New(opts Options) *Client {
+func New(opts Options, logger *slog.Logger) *Client {
+	if logger == nil {
+		panic("logger is required")
+	}
+
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: opts.InsecureTLS},
 	}
+
 	return &Client{
-		opts: opts,
+		opts:   opts,
+		logger: logger,
 		http: &http.Client{
 			Timeout:   opts.Timeout,
 			Transport: transport,
@@ -219,6 +227,8 @@ func (c *Client) FetchCampaign() (*domain.CampaignStatus, error) {
 	if apiResp.ErrorCode != 0 {
 		return nil, fmt.Errorf("api error code %d", apiResp.ErrorCode)
 	}
+
+	c.logger.Info("fetched campaign status", "season", apiResp.FactionStatus[0].Season)
 
 	return toDomainCampaign(apiResp), nil
 }
