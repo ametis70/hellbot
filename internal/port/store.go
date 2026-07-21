@@ -11,4 +11,5 @@ type EventStore interface {
 	SaveOngoingEvent(id int, kind domain.EventKind) error
 	RemoveOngoingEvent(id int, kind domain.EventKind) error
 	GetOngoingEvent(id int, kind domain.EventKind) (*domain.OngoingEvent, error)
+	ListOngoingEvents(kind domain.EventKind) ([]*domain.OngoingEvent, error)
 }

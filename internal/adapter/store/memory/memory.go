@@ -67,3 +67,17 @@ func (s *MemoryStore) GetOngoingEvent(id int, kind domain.EventKind) (*domain.On
 	}
 	return event, nil
 }
+
+func (s *MemoryStore) ListOngoingEvents(kind domain.EventKind) ([]*domain.OngoingEvent, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	result := make([]*domain.OngoingEvent, 0)
+	for _, event := range s.events {
+		if event.Kind == kind {
+			result = append(result, event)
+		}
+	}
+
+	return result, nil
+}
