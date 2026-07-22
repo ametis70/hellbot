@@ -109,7 +109,10 @@ func (p *Poller) handleDefendEvent(current, previous *domain.CampaignStatus) boo
 		if current.DefendEvent.Status != domain.EventStatusActive {
 			return false
 		}
-		p.events.SaveOngoingEvent(current.DefendEvent.ID, domain.EventKindDefend)
+		if err := p.events.SaveOngoingEvent(current.DefendEvent.ID, domain.EventKindDefend); err != nil {
+			p.logger.Error("failed to save ongoing defend event", "error", err)
+			return false
+		}
 		p.notify(domain.EventMessage{
 			Kind:        domain.EventKindDefend,
 			Transition:  domain.EventTransitionStarted,
@@ -123,7 +126,10 @@ func (p *Poller) handleDefendEvent(current, previous *domain.CampaignStatus) boo
 		if current.DefendEvent.Status == domain.EventStatusActive {
 			return false
 		}
-		p.events.RemoveOngoingEvent(storedEvent.ID, domain.EventKindDefend)
+		if err := p.events.RemoveOngoingEvent(storedEvent.ID, domain.EventKindDefend); err != nil {
+			p.logger.Error("failed to remove ongoing defend event", "error", err)
+			return false
+		}
 		transition := domain.EventTransitionFailed
 		if current.DefendEvent.Status == domain.EventStatusSuccess {
 			transition = domain.EventTransitionSucceeded
@@ -149,9 +155,15 @@ func (p *Poller) handleDefendEvent(current, previous *domain.CampaignStatus) boo
 				DefendEvent: previous.DefendEvent,
 			})
 		}
-		p.events.RemoveOngoingEvent(storedEvent.ID, domain.EventKindDefend)
+		if err := p.events.RemoveOngoingEvent(storedEvent.ID, domain.EventKindDefend); err != nil {
+			p.logger.Error("failed to remove ongoing defend event", "error", err)
+			return false
+		}
 		if current.DefendEvent.Status == domain.EventStatusActive {
-			p.events.SaveOngoingEvent(current.DefendEvent.ID, domain.EventKindDefend)
+			if err := p.events.SaveOngoingEvent(current.DefendEvent.ID, domain.EventKindDefend); err != nil {
+				p.logger.Error("failed to save ongoing defend event", "error", err)
+				return false
+			}
 			p.notify(domain.EventMessage{
 				Kind:        domain.EventKindDefend,
 				Transition:  domain.EventTransitionStarted,
@@ -184,7 +196,10 @@ func (p *Poller) handleAttackEvents(current *domain.CampaignStatus) bool {
 	// stored events not in current active → ended
 	for _, s := range stored {
 		if _, stillActive := currentActive[s.ID]; !stillActive {
-			p.events.RemoveOngoingEvent(s.ID, domain.EventKindAttack)
+			if err := p.events.RemoveOngoingEvent(s.ID, domain.EventKindAttack); err != nil {
+				p.logger.Error("failed to remove ongoing attack event", "error", err)
+				continue
+			}
 
 			for _, e := range current.AttackEvents {
 				if e.ID == s.ID {
@@ -216,7 +231,10 @@ func (p *Poller) handleAttackEvents(current *domain.CampaignStatus) bool {
 			continue
 		}
 		if _, exists := storedIDs[e.ID]; !exists {
-			p.events.SaveOngoingEvent(e.ID, domain.EventKindAttack)
+			if err := p.events.SaveOngoingEvent(e.ID, domain.EventKindAttack); err != nil {
+				p.logger.Error("failed to save ongoing attack event", "error", err)
+				continue
+			}
 			attackCopy := e
 			p.notify(domain.EventMessage{
 				Kind:        domain.EventKindAttack,

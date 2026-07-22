@@ -3,17 +3,20 @@ version: "2"
 linters:
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
     - unused
-    - gofmt
-    - goimports
     - misspell
     - unconvert
     - unparam
 
-linters-settings:
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+formatters-settings:
   goimports:
-    local-prefixes: github.com/ametis70/hellbot
+    local-prefixes:
+      - github.com/ametis70/hellbot

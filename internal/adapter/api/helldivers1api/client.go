@@ -217,7 +217,9 @@ func (c *Client) FetchCampaign() (*domain.CampaignStatus, error) {
 	if err != nil {
 		return nil, fmt.Errorf("http request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	var apiResp apiCampaignStatus
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {

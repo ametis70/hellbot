@@ -123,60 +123,60 @@ func FactionStatuses() []domain.FactionStatus {
 
 func CampaignWithActiveDefend() *domain.CampaignStatus {
 	return &domain.CampaignStatus{
-		Time:          T0,
+		Time:           T0,
 		FactionsStatus: FactionStatuses(),
-		DefendEvent:   DefendEventActive(),
-		AttackEvents:  []domain.AttackEvent{},
-		Statistics:    []domain.Statistics{},
+		DefendEvent:    DefendEventActive(),
+		AttackEvents:   []domain.AttackEvent{},
+		Statistics:     []domain.Statistics{},
 	}
 }
 
 func CampaignWithFailedDefend() *domain.CampaignStatus {
 	return &domain.CampaignStatus{
-		Time:          T0.Add(time.Hour),
+		Time:           T0.Add(time.Hour),
 		FactionsStatus: FactionStatuses(),
-		DefendEvent:   DefendEventFailed(),
-		AttackEvents:  []domain.AttackEvent{},
-		Statistics:    []domain.Statistics{},
+		DefendEvent:    DefendEventFailed(),
+		AttackEvents:   []domain.AttackEvent{},
+		Statistics:     []domain.Statistics{},
 	}
 }
 
 func CampaignWithSucceededDefend() *domain.CampaignStatus {
 	return &domain.CampaignStatus{
-		Time:          T0.Add(time.Hour),
+		Time:           T0.Add(time.Hour),
 		FactionsStatus: FactionStatuses(),
-		DefendEvent:   DefendEventSucceeded(),
-		AttackEvents:  []domain.AttackEvent{},
-		Statistics:    []domain.Statistics{},
+		DefendEvent:    DefendEventSucceeded(),
+		AttackEvents:   []domain.AttackEvent{},
+		Statistics:     []domain.Statistics{},
 	}
 }
 
 func CampaignWithNoDefend() *domain.CampaignStatus {
 	return &domain.CampaignStatus{
-		Time:          T0,
+		Time:           T0,
 		FactionsStatus: FactionStatuses(),
-		DefendEvent:   nil,
-		AttackEvents:  []domain.AttackEvent{},
-		Statistics:    []domain.Statistics{},
+		DefendEvent:    nil,
+		AttackEvents:   []domain.AttackEvent{},
+		Statistics:     []domain.Statistics{},
 	}
 }
 
 func CampaignWithActiveAttack() *domain.CampaignStatus {
 	return &domain.CampaignStatus{
-		Time:          T0,
+		Time:           T0,
 		FactionsStatus: FactionStatuses(),
-		DefendEvent:   nil,
-		AttackEvents:  []domain.AttackEvent{AttackEventActive()},
-		Statistics:    []domain.Statistics{},
+		DefendEvent:    nil,
+		AttackEvents:   []domain.AttackEvent{AttackEventActive()},
+		Statistics:     []domain.Statistics{},
 	}
 }
 
 func CampaignWithEndedAttack() *domain.CampaignStatus {
 	return &domain.CampaignStatus{
-		Time:          T0.Add(time.Hour),
+		Time:           T0.Add(time.Hour),
 		FactionsStatus: FactionStatuses(),
-		DefendEvent:   nil,
-		AttackEvents:  []domain.AttackEvent{AttackEventSucceeded()},
-		Statistics:    []domain.Statistics{},
+		DefendEvent:    nil,
+		AttackEvents:   []domain.AttackEvent{AttackEventSucceeded()},
+		Statistics:     []domain.Statistics{},
 	}
 }

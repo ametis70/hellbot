@@ -40,8 +40,8 @@ func TestSaveCampaign_OverwritesPrevious(t *testing.T) {
 	first := testutil.CampaignWithActiveDefend()
 	second := testutil.CampaignWithFailedDefend()
 
-	s.SaveCampaign(first)
-	s.SaveCampaign(second)
+	_ = s.SaveCampaign(first)
+	_ = s.SaveCampaign(second)
 
 	got, err := s.LatestCampaign()
 	if err != nil {
@@ -83,7 +83,7 @@ func TestSaveAndGetOngoingEvent(t *testing.T) {
 
 func TestRemoveOngoingEvent(t *testing.T) {
 	s := New()
-	s.SaveOngoingEvent(42, domain.EventKindDefend)
+	_ = s.SaveOngoingEvent(42, domain.EventKindDefend)
 
 	if err := s.RemoveOngoingEvent(42, domain.EventKindDefend); err != nil {
 		t.Fatalf("RemoveOngoingEvent returned unexpected error: %v", err)
@@ -105,9 +105,9 @@ func TestRemoveOngoingEvent_NotFound(t *testing.T) {
 
 func TestListOngoingEvents_FiltersByKind(t *testing.T) {
 	s := New()
-	s.SaveOngoingEvent(1, domain.EventKindDefend)
-	s.SaveOngoingEvent(2, domain.EventKindAttack)
-	s.SaveOngoingEvent(3, domain.EventKindAttack)
+	_ = s.SaveOngoingEvent(1, domain.EventKindDefend)
+	_ = s.SaveOngoingEvent(2, domain.EventKindAttack)
+	_ = s.SaveOngoingEvent(3, domain.EventKindAttack)
 
 	defends, err := s.ListOngoingEvents(domain.EventKindDefend)
 	if err != nil {
@@ -148,7 +148,7 @@ func TestConcurrentSaveCampaign(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			s.SaveCampaign(testutil.CampaignWithActiveDefend())
+			_ = s.SaveCampaign(testutil.CampaignWithActiveDefend())
 		}()
 	}
 	wg.Wait()
@@ -169,7 +169,7 @@ func TestConcurrentSaveAndGetOngoingEvent(t *testing.T) {
 		id := i
 		go func() {
 			defer wg.Done()
-			s.SaveOngoingEvent(id, domain.EventKindAttack)
+			_ = s.SaveOngoingEvent(id, domain.EventKindAttack)
 		}()
 	}
 	wg.Wait()

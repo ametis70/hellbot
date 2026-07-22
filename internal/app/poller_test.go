@@ -86,7 +86,7 @@ func TestHandleDefendEvent_StillActive(t *testing.T) {
 	previous := testutil.CampaignWithActiveDefend()
 
 	// store the event first
-	p.events.SaveOngoingEvent(current.DefendEvent.ID, domain.EventKindDefend)
+	_ = p.events.SaveOngoingEvent(current.DefendEvent.ID, domain.EventKindDefend)
 
 	p.handleDefendEvent(current, previous)
 
@@ -104,7 +104,7 @@ func TestHandleDefendEvent_EndedFailed(t *testing.T) {
 	previous := testutil.CampaignWithActiveDefend()
 
 	// store the active event first
-	p.events.SaveOngoingEvent(previous.DefendEvent.ID, domain.EventKindDefend)
+	_ = p.events.SaveOngoingEvent(previous.DefendEvent.ID, domain.EventKindDefend)
 
 	p.handleDefendEvent(current, previous)
 
@@ -125,7 +125,7 @@ func TestHandleDefendEvent_EndedSucceeded(t *testing.T) {
 	current := testutil.CampaignWithSucceededDefend()
 	previous := testutil.CampaignWithActiveDefend()
 
-	p.events.SaveOngoingEvent(previous.DefendEvent.ID, domain.EventKindDefend)
+	_ = p.events.SaveOngoingEvent(previous.DefendEvent.ID, domain.EventKindDefend)
 
 	p.handleDefendEvent(current, previous)
 
@@ -148,7 +148,7 @@ func TestHandleDefendEvent_NewEventReplacesOld(t *testing.T) {
 	current := testutil.CampaignWithNoDefend()
 	current.DefendEvent = newDefend
 
-	p.events.SaveOngoingEvent(previous.DefendEvent.ID, domain.EventKindDefend)
+	_ = p.events.SaveOngoingEvent(previous.DefendEvent.ID, domain.EventKindDefend)
 
 	p.handleDefendEvent(current, previous)
 
@@ -206,7 +206,7 @@ func TestHandleAttackEvents_StillActive(t *testing.T) {
 	p := newTestPoller(notifier)
 
 	current := testutil.CampaignWithActiveAttack()
-	p.events.SaveOngoingEvent(current.AttackEvents[0].ID, domain.EventKindAttack)
+	_ = p.events.SaveOngoingEvent(current.AttackEvents[0].ID, domain.EventKindAttack)
 
 	p.handleAttackEvents(current)
 
@@ -221,7 +221,7 @@ func TestHandleAttackEvents_EndedSucceeded(t *testing.T) {
 	p := newTestPoller(notifier)
 
 	current := testutil.CampaignWithEndedAttack()
-	p.events.SaveOngoingEvent(current.AttackEvents[0].ID, domain.EventKindAttack)
+	_ = p.events.SaveOngoingEvent(current.AttackEvents[0].ID, domain.EventKindAttack)
 
 	p.handleAttackEvents(current)
 
@@ -243,7 +243,7 @@ func TestHandleAttackEvents_EndedFailed(t *testing.T) {
 	current := testutil.CampaignWithNoDefend()
 	current.AttackEvents = []domain.AttackEvent{failed}
 
-	p.events.SaveOngoingEvent(failed.ID, domain.EventKindAttack)
+	_ = p.events.SaveOngoingEvent(failed.ID, domain.EventKindAttack)
 
 	p.handleAttackEvents(current)
 
