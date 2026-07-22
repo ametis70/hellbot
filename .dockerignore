@@ -1,0 +1,10 @@
+.git
+.github
+.envrc
+*.md
+*.sqlite
+.env
+result
+result-*
+old/
+nix/

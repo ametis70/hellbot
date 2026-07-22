@@ -8,6 +8,6 @@ COPY . .
 VOLUME /app/db
 
 RUN go mod download
-RUN go build -o hellbot .
+RUN go build -o hellbot ./cmd/hellbot
 
 CMD ["./hellbot"]
