@@ -15,8 +15,7 @@ formatters:
   enable:
     - gofmt
     - goimports
-
-formatters-settings:
-  goimports:
-    local-prefixes:
-      - github.com/ametis70/hellbot
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/ametis70/hellbot
