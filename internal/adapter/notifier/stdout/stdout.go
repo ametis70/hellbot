@@ -2,11 +2,16 @@ package stdout
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ametis70/hellbot/internal/domain"
 )
 
-func formatMessage(msg domain.EventMessage) (string, error) {
+func formatTime(t time.Time, loc *time.Location) string {
+	return t.In(loc).Format(time.RFC3339)
+}
+
+func formatMessage(msg domain.EventMessage, loc *time.Location) (string, error) {
 	var formattedMessage string
 
 	switch msg.Kind {
@@ -16,16 +21,16 @@ func formatMessage(msg domain.EventMessage) (string, error) {
 			msg.Transition,
 			msg.DefendEvent.Enemy,
 			msg.DefendEvent.Region,
-			msg.DefendEvent.StartTime,
-			msg.DefendEvent.EndTime,
+			formatTime(msg.DefendEvent.StartTime, loc),
+			formatTime(msg.DefendEvent.EndTime, loc),
 		)
 	case domain.EventKindAttack:
 		formattedMessage = fmt.Sprintf(
 			"[attack] %s — Enemy: %v, Start: %v, End: %v",
 			msg.Transition,
 			msg.AttackEvent.Enemy,
-			msg.AttackEvent.StartTime,
-			msg.AttackEvent.EndTime,
+			formatTime(msg.AttackEvent.StartTime, loc),
+			formatTime(msg.AttackEvent.EndTime, loc),
 		)
 	}
 
@@ -36,14 +41,24 @@ func formatMessage(msg domain.EventMessage) (string, error) {
 	return formattedMessage, nil
 }
 
-type StdoutNotifier struct{}
+type Options struct {
+	Timezone *time.Location
+}
 
-func New() *StdoutNotifier {
-	return &StdoutNotifier{}
+type StdoutNotifier struct {
+	opts Options
+}
+
+func New(opts Options) *StdoutNotifier {
+	if opts.Timezone == nil {
+		opts.Timezone = time.UTC
+	}
+
+	return &StdoutNotifier{opts: opts}
 }
 
 func (n *StdoutNotifier) Notify(msg domain.EventMessage) error {
-	formattedMessage, err := formatMessage(msg)
+	formattedMessage, err := formatMessage(msg, n.opts.Timezone)
 	if err != nil {
 		return err
 	}

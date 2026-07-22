@@ -16,6 +16,12 @@ import (
 )
 
 func main() {
+	tz := os.Getenv("TZ")
+	loc, err := time.LoadLocation(tz)
+	if err != nil || tz == "" {
+		loc = time.UTC
+	}
+
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	fetcher := helldivers1api.New(helldivers1api.DefaultOptions(), logger)
@@ -23,7 +29,7 @@ func main() {
 	store := memory.New()
 
 	notifiers := []port.Notifier{
-		stdout.New(),
+		stdout.New(stdout.Options{Timezone: loc}),
 	}
 
 	poller := app.New(
