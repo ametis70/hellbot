@@ -5,8 +5,9 @@
 ![license](https://img.shields.io/github/license/ametis70/hellbot?style=flat-square)
 ![go](https://img.shields.io/badge/go-1.26-00ADD8?style=flat-square&logo=go&logoColor=white)
 ![nix](https://img.shields.io/badge/nix-flake-5277C3?style=flat-square&logo=nixos&logoColor=white)
-![build](https://img.shields.io/github/actions/workflow/status/ametis70/hellbot/main.yml?branch=main&style=flat-square)
-![tests](https://img.shields.io/github/actions/workflow/status/ametis70/hellbot/test.yml?branch=main&style=flat-square&label=tests)
+![build](https://img.shields.io/github/actions/workflow/status/ametis70/hellbot/build-and-publish.yml?branch=main&style=flat-square)
+![tests](https://img.shields.io/endpoint?style=flat-square&url=https://gist.githubusercontent.com/ametis70/d4d99431f51f28cef15d3fe6ab985e4a/raw/hellbot-go-tests.json)
+![coverage](https://img.shields.io/endpoint?style=flat-square&url=https://gist.githubusercontent.com/ametis70/d4d99431f51f28cef15d3fe6ab985e4a/raw/hellbot-go-coverage.json)
 
 hellbot monitors the [HELLDIVERS™](https://www.arrowheadgamestudios.com/aboutarrowhead/games/helldivers/) galactic campaign and broadcasts alerts when defend and attack events start or end
 

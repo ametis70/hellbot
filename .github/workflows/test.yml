@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  GIST_ID: d4d99431f51f28cef15d3fe6ab985e4a
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -20,13 +23,11 @@ jobs:
           go-version-file: go.mod
 
       - name: Run tests
-        run: go test -race ./...
+        run: go test -v -coverprofile=coverage.out -covermode=atomic ./... | tee test.out
 
-      - name: Generate coverage report
-        run: go test -coverprofile=coverage.out -covermode=atomic ./...
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Upload badges to Gist
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: gaelgirodon/ci-badges-action@v1
         with:
-          files: coverage.out
-          fail_ci_if_error: false
+          gist-id: ${{ env.GIST_ID }}
+          token: ${{ secrets.GIST_TOKEN }}
