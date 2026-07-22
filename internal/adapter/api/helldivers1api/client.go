@@ -228,7 +228,11 @@ func (c *Client) FetchCampaign() (*domain.CampaignStatus, error) {
 		return nil, fmt.Errorf("api error code %d", apiResp.ErrorCode)
 	}
 
-	c.logger.Info("fetched campaign status", "season", apiResp.FactionStatus[0].Season)
+	if len(apiResp.FactionStatus) > 0 {
+		c.logger.Info("fetched campaign status", "season", apiResp.FactionStatus[0].Season)
+	} else {
+		c.logger.Info("fetched campaign status")
+	}
 
 	return toDomainCampaign(apiResp), nil
 }
