@@ -23,7 +23,9 @@ jobs:
           go-version-file: go.mod
 
       - name: Run tests
-        run: go test -v -coverprofile=coverage.out -covermode=atomic $(go list ./... | grep -v '/cmd/') | tee test.out
+        run: |
+          go test -v -coverprofile=coverage.out -covermode=atomic ./... | tee test.out
+          go tool cover -func=coverage.out >> test.out
 
       - name: Upload badges to Gist
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
