@@ -81,13 +81,13 @@ func (p *Poller) notify(msg domain.EventMessage) {
 }
 
 func (p *Poller) handleEvents(current, previous *domain.CampaignStatus) bool {
-	defendEventsChanged := p.handleDefendEvent(current)
+	defendEventsChanged := p.handleDefendEvent(current, previous)
 	attackEventsChanged := p.handleAttackEvents(current)
 
 	return defendEventsChanged || attackEventsChanged
 }
 
-func (p *Poller) handleDefendEvent(current *domain.CampaignStatus) bool {
+func (p *Poller) handleDefendEvent(current, previous *domain.CampaignStatus) bool {
 	stored, err := p.events.ListOngoingEvents(domain.EventKindDefend)
 	if err != nil {
 		p.logger.Error("failed to list ongoing defend events", "error", err)
@@ -104,7 +104,11 @@ func (p *Poller) handleDefendEvent(current *domain.CampaignStatus) bool {
 		return false
 	}
 
+	// no stored event yet — new event
 	if current.DefendEvent != nil && storedEvent == nil {
+		if current.DefendEvent.Status != domain.EventStatusActive {
+			return false
+		}
 		p.events.SaveOngoingEvent(current.DefendEvent.ID, domain.EventKindDefend)
 		p.notify(domain.EventMessage{
 			Kind:        domain.EventKindDefend,
@@ -114,19 +118,46 @@ func (p *Poller) handleDefendEvent(current *domain.CampaignStatus) bool {
 		return true
 	}
 
-	if current.DefendEvent == nil && storedEvent != nil {
+	// same event — check if status changed from active to ended
+	if current.DefendEvent != nil && current.DefendEvent.ID == storedEvent.ID {
+		if current.DefendEvent.Status == domain.EventStatusActive {
+			return false
+		}
 		p.events.RemoveOngoingEvent(storedEvent.ID, domain.EventKindDefend)
+		transition := domain.EventTransitionFailed
+		if current.DefendEvent.Status == domain.EventStatusSuccess {
+			transition = domain.EventTransitionSucceeded
+		}
+		p.notify(domain.EventMessage{
+			Kind:        domain.EventKindDefend,
+			Transition:  transition,
+			DefendEvent: current.DefendEvent,
+		})
 		return true
 	}
 
-	if current.DefendEvent.ID != storedEvent.ID {
+	// different event ID — old ended, new started
+	if current.DefendEvent != nil && current.DefendEvent.ID != storedEvent.ID {
+		if previous.DefendEvent != nil && previous.DefendEvent.ID == storedEvent.ID {
+			transition := domain.EventTransitionFailed
+			if previous.DefendEvent.Status == domain.EventStatusSuccess {
+				transition = domain.EventTransitionSucceeded
+			}
+			p.notify(domain.EventMessage{
+				Kind:        domain.EventKindDefend,
+				Transition:  transition,
+				DefendEvent: previous.DefendEvent,
+			})
+		}
 		p.events.RemoveOngoingEvent(storedEvent.ID, domain.EventKindDefend)
-		p.events.SaveOngoingEvent(current.DefendEvent.ID, domain.EventKindDefend)
-		p.notify(domain.EventMessage{
-			Kind:        domain.EventKindDefend,
-			Transition:  domain.EventTransitionStarted,
-			DefendEvent: current.DefendEvent,
-		})
+		if current.DefendEvent.Status == domain.EventStatusActive {
+			p.events.SaveOngoingEvent(current.DefendEvent.ID, domain.EventKindDefend)
+			p.notify(domain.EventMessage{
+				Kind:        domain.EventKindDefend,
+				Transition:  domain.EventTransitionStarted,
+				DefendEvent: current.DefendEvent,
+			})
+		}
 		return true
 	}
 
@@ -150,12 +181,27 @@ func (p *Poller) handleAttackEvents(current *domain.CampaignStatus) bool {
 
 	changed := false
 
-	// stored events not in current → ended
+	// stored events not in current active → ended
 	for _, s := range stored {
 		if _, stillActive := currentActive[s.ID]; !stillActive {
 			p.events.RemoveOngoingEvent(s.ID, domain.EventKindAttack)
+
+			for _, e := range current.AttackEvents {
+				if e.ID == s.ID {
+					transition := domain.EventTransitionFailed
+					if e.Status == domain.EventStatusSuccess {
+						transition = domain.EventTransitionSucceeded
+					}
+					attackCopy := e
+					p.notify(domain.EventMessage{
+						Kind:        domain.EventKindAttack,
+						Transition:  transition,
+						AttackEvent: &attackCopy,
+					})
+					break
+				}
+			}
 			changed = true
-			// outcome unknown without snapshot — skip notify for now
 		}
 	}
 
