@@ -3,8 +3,6 @@ name: Coverage
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 env:
   GIST_ID: d4d99431f51f28cef15d3fe6ab985e4a
