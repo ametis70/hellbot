@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Enemy int
 
@@ -9,6 +12,19 @@ const (
 	EnemyIlluminate Enemy = 1
 	EnemyBug        Enemy = 2
 )
+
+func (e Enemy) String() string {
+	switch e {
+	case EnemyCyborg:
+		return "Cyborg"
+	case EnemyIlluminate:
+		return "Illuminate"
+	case EnemyBug:
+		return "Bug"
+	default:
+		return fmt.Sprintf("Unknown(%d)", int(e))
+	}
+}
 
 type EventStatusKind string
 
