@@ -40,17 +40,18 @@ go build ./cmd/hellbot
 
 ## Configuration
 
-hellbot is configured via environment variables:
+hellbot is configured via a YAML file. See [docs/config.md](docs/config.md) for all available options and examples.
 
-| Variable | Description                                          | Required               |
-| -------- | ---------------------------------------------------- | ---------------------- |
-| `TZ`     | Display timezone (IANA format, e.g. `Europe/Lisbon`) | No (defaults to `UTC`) |
+The config file location is resolved in this order:
+1. `--config <path>` CLI flag
+2. `HELLBOT_CONFIG` environment variable
+3. `./config.yml` in the working directory
 
 ## Running
 
 ```sh
 docker run \
-  -e TZ=America/Argentina/Buenos_Aires \
+  -v ./config.yml:/app/config.yml \
   ghcr.io/ametis70/hellbot:latest
 ```
 
@@ -60,13 +61,9 @@ docker run \
 services:
   hellbot:
     image: ghcr.io/ametis70/hellbot:latest
-    environment:
-      - TZ=${TZ}
+    volumes:
+      - ./config.yml:/app/config.yml
     restart: unless-stopped
-```
-
-```sh
-TZ=America/Argentina/Buenos_Aires docker compose up -d
 ```
 
 ## Contributing
