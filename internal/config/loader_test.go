@@ -16,7 +16,7 @@ func writeConfig(t *testing.T, content string) string {
 	if _, err := f.WriteString(content); err != nil {
 		t.Fatalf("writing temp config: %v", err)
 	}
-	f.Close()
+	_ = f.Close()
 	return f.Name()
 }
 
@@ -29,7 +29,7 @@ func writeSecretFile(t *testing.T, content string) string {
 	if _, err := f.WriteString(content); err != nil {
 		t.Fatalf("writing temp secret: %v", err)
 	}
-	f.Close()
+	_ = f.Close()
 	return f.Name()
 }
 
@@ -172,7 +172,7 @@ func TestResolveEnvVars_Set(t *testing.T) {
 }
 
 func TestResolveEnvVars_Unset(t *testing.T) {
-	os.Unsetenv("UNSET_VAR")
+	_ = os.Unsetenv("UNSET_VAR")
 	result := resolveEnvVars("${UNSET_VAR}")
 	if result != "${UNSET_VAR}" {
 		t.Errorf("expected placeholder preserved, got %s", result)
@@ -225,7 +225,7 @@ func TestResolveValue_NeitherSet(t *testing.T) {
 }
 
 func TestResolveValue_UnsetEnvVar(t *testing.T) {
-	os.Unsetenv("MISSING_TOKEN")
+	_ = os.Unsetenv("MISSING_TOKEN")
 	_, err := resolveValue("token", "${MISSING_TOKEN}", "")
 	if err == nil {
 		t.Error("expected error for unset env var, got nil")
@@ -250,7 +250,7 @@ func TestFindConfigPath_EnvVar(t *testing.T) {
 }
 
 func TestFindConfigPath_Default(t *testing.T) {
-	os.Unsetenv("HELLBOT_CONFIG")
+	_ = os.Unsetenv("HELLBOT_CONFIG")
 	result := FindConfigPath("")
 	if result != defaultConfigPath {
 		t.Errorf("expected %s, got %s", defaultConfigPath, result)

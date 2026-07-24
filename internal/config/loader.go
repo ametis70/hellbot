@@ -41,6 +41,9 @@ func readSecretFile(path string) (string, error) {
 
 // resolveValue resolves a plain value (with env var interpolation) or a file value.
 // plain and file are mutually exclusive — exactly one must be non-empty.
+// fieldName is used in error messages (e.g. "token", "channel_id").
+//
+//nolint:unparam // fieldName will receive multiple values once more adapters are added
 func resolveValue(fieldName, plain, file string) (string, error) {
 	if plain != "" && file != "" {
 		return "", fmt.Errorf("%s and %s_file are mutually exclusive", fieldName, fieldName)
