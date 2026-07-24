@@ -96,48 +96,51 @@ func discordTimestamp(unix int64) string {
 }
 
 func formatDefendMessage(transition domain.EventTransition, e *domain.DefendEvent) string {
+	region := domain.GetRegion(e.Enemy, e.Region)
+
 	switch transition {
 	case domain.EventTransitionStarted:
+		if domain.IsSuperEarth(e.Region) {
+			return fmt.Sprintf(
+				"🚨 **The %s is attacking Super Earth!**\nEnds: %s",
+				e.Enemy,
+				discordTimestamp(e.EndTime.Unix()),
+			)
+		}
 		return fmt.Sprintf(
-			"⚔️ **Defend event started** against **%s** in region %d\nEnds: %s",
+			"⚔️ **The %s is attacking %s (%d/%d)!**\nEnds: %s",
 			e.Enemy,
+			region.Name,
 			e.Region,
+			domain.TotalRegions,
 			discordTimestamp(e.EndTime.Unix()),
 		)
 	case domain.EventTransitionSucceeded:
-		return fmt.Sprintf(
-			"✅ **Defend event succeeded!** Super Earth held region %d against **%s**",
-			e.Region,
-			e.Enemy,
-		)
+		if domain.IsSuperEarth(e.Region) {
+			return fmt.Sprintf("✅ **Super Earth has been defended against the %s!**", e.Enemy)
+		}
+		return fmt.Sprintf("✅ **%s has been defended against the %s!**", region.Name, e.Enemy)
 	case domain.EventTransitionFailed:
-		return fmt.Sprintf(
-			"❌ **Defend event failed.** **%s** took region %d",
-			e.Enemy,
-			e.Region,
-		)
+		if domain.IsSuperEarth(e.Region) {
+			return fmt.Sprintf("❌ **Super Earth has fallen to the %s.**", e.Enemy)
+		}
+		return fmt.Sprintf("❌ **%s has fallen to the %s.**", region.Name, e.Enemy)
 	}
-	return fmt.Sprintf("[defend] %s — %s region %d", transition, e.Enemy, e.Region)
+	return fmt.Sprintf("[defend] %s — %s %s", transition, e.Enemy, region.Name)
 }
 
 func formatAttackMessage(transition domain.EventTransition, e *domain.AttackEvent) string {
 	switch transition {
 	case domain.EventTransitionStarted:
 		return fmt.Sprintf(
-			"🚀 **Attack event started** against **%s**\nEnds: %s",
+			"🚀 **An attack against the %s's homeworld has started!**\nEnds: %s",
 			e.Enemy,
 			discordTimestamp(e.EndTime.Unix()),
 		)
 	case domain.EventTransitionSucceeded:
-		return fmt.Sprintf(
-			"✅ **Attack event succeeded!** Super Earth defeated **%s**",
-			e.Enemy,
-		)
+		return fmt.Sprintf("✅ **Attack succeeded! The %s were defeated.**", e.Enemy)
 	case domain.EventTransitionFailed:
-		return fmt.Sprintf(
-			"❌ **Attack event failed.** Could not defeat **%s**",
-			e.Enemy,
-		)
+		return fmt.Sprintf("❌ **Attack failed! The %s defended their homeworld.**", e.Enemy)
 	}
 	return fmt.Sprintf("[attack] %s — %s", transition, e.Enemy)
 }
