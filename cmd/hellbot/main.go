@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ametis70/hellbot/internal/adapter/api/helldivers1api"
+	discordnotifier "github.com/ametis70/hellbot/internal/adapter/notifier/discord"
 	"github.com/ametis70/hellbot/internal/adapter/notifier/stdout"
 	"github.com/ametis70/hellbot/internal/adapter/store/memory"
 	"github.com/ametis70/hellbot/internal/app"
@@ -37,7 +38,9 @@ func main() {
 	}
 
 	// Build notifiers from config
+	var closers []func() error
 	notifiers := make([]port.Notifier, 0, len(cfg.Notifiers))
+
 	for _, n := range cfg.Notifiers {
 		switch n.Type {
 		case config.NotifierTypeStdout:
@@ -55,6 +58,24 @@ func main() {
 				}
 			}
 			notifiers = append(notifiers, stdout.New(stdout.Options{Timezone: tz}))
+			logger.Info("registered notifier", "id", n.ID, "type", n.Type)
+
+		case config.NotifierTypeDiscord:
+			opts, err := config.ResolveDiscordOptions(n.Options)
+			if err != nil {
+				logger.Error("invalid discord notifier options", "id", n.ID, "error", err)
+				os.Exit(1)
+			}
+			dn, err := discordnotifier.New(discordnotifier.Options{
+				Token:     opts.Token,
+				ChannelID: opts.ChannelID,
+			}, logger)
+			if err != nil {
+				logger.Error("failed to create discord notifier", "id", n.ID, "error", err)
+				os.Exit(1)
+			}
+			closers = append(closers, dn.Close)
+			notifiers = append(notifiers, dn)
 			logger.Info("registered notifier", "id", n.ID, "type", n.Type)
 		}
 	}
@@ -76,5 +97,12 @@ func main() {
 		logger.Error("poller exited with error", "error", err)
 		os.Exit(1)
 	}
+
+	for _, close := range closers {
+		if err := close(); err != nil {
+			logger.Error("error closing notifier", "error", err)
+		}
+	}
+
 	logger.Info("hellbot stopped")
 }

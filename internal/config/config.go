@@ -6,7 +6,8 @@ import "time"
 type NotifierType string
 
 const (
-	NotifierTypeStdout NotifierType = "stdout"
+	NotifierTypeStdout  NotifierType = "stdout"
+	NotifierTypeDiscord NotifierType = "discord"
 )
 
 // RawOptions holds unparsed YAML options for a notifier.
@@ -22,6 +23,16 @@ type NotifierConfig struct {
 // StdoutOptions holds parsed options for the stdout notifier.
 type StdoutOptions struct {
 	Timezone string `yaml:"timezone"`
+}
+
+// DiscordOptions holds parsed options for the discord notifier.
+// Token and TokenFile are mutually exclusive — exactly one must be set.
+// ChannelID and ChannelIDFile are mutually exclusive — exactly one must be set.
+type DiscordOptions struct {
+	Token         string `yaml:"token"`
+	TokenFile     string `yaml:"token_file"`
+	ChannelID     string `yaml:"channel_id"`
+	ChannelIDFile string `yaml:"channel_id_file"`
 }
 
 // Config is the top-level configuration structure.

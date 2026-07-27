@@ -42,8 +42,6 @@ func readSecretFile(path string) (string, error) {
 // resolveValue resolves a plain value (with env var interpolation) or a file value.
 // plain and file are mutually exclusive — exactly one must be non-empty.
 // fieldName is used in error messages (e.g. "token", "channel_id").
-//
-//nolint:unparam // fieldName will receive multiple values once more adapters are added
 func resolveValue(fieldName, plain, file string) (string, error) {
 	if plain != "" && file != "" {
 		return "", fmt.Errorf("%s and %s_file are mutually exclusive", fieldName, fieldName)
@@ -91,7 +89,39 @@ func ResolveStdoutOptions(raw RawOptions) (StdoutOptions, error) {
 	return opts, nil
 }
 
-// Load reads a config file from the given path, resolves env vars and secrets,
+// ResolveDiscordOptions decodes, validates, and resolves discord notifier options.
+func ResolveDiscordOptions(raw RawOptions) (DiscordOptions, error) {
+	opts := DiscordOptions{}
+	if raw == nil {
+		return opts, fmt.Errorf("discord options are required")
+	}
+
+	data, err := yaml.Marshal(raw)
+	if err != nil {
+		return opts, fmt.Errorf("marshaling discord options: %w", err)
+	}
+	if err := yaml.Unmarshal(data, &opts); err != nil {
+		return opts, fmt.Errorf("parsing discord options: %w", err)
+	}
+
+	token, err := resolveValue("token", opts.Token, opts.TokenFile)
+	if err != nil {
+		return opts, fmt.Errorf("discord token: %w", err)
+	}
+	opts.Token = token
+	opts.TokenFile = ""
+
+	channelID, err := resolveValue("channel_id", opts.ChannelID, opts.ChannelIDFile)
+	if err != nil {
+		return opts, fmt.Errorf("discord channel_id: %w", err)
+	}
+	opts.ChannelID = channelID
+	opts.ChannelIDFile = ""
+
+	return opts, nil
+}
+
+// ResolveStdoutOptions decodes and validates stdout notifier options., resolves env vars and secrets,
 // validates all notifier options, and returns a parsed Config.
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
@@ -144,6 +174,10 @@ func Load(path string) (*Config, error) {
 		switch n.Type {
 		case NotifierTypeStdout:
 			if _, err := ResolveStdoutOptions(n.Options); err != nil {
+				return nil, fmt.Errorf("notifier %q: %w", n.ID, err)
+			}
+		case NotifierTypeDiscord:
+			if _, err := ResolveDiscordOptions(n.Options); err != nil {
 				return nil, fmt.Errorf("notifier %q: %w", n.ID, err)
 			}
 		default:

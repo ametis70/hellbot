@@ -34,3 +34,7 @@ result-*
 package.json
 
 .direnv
+
+hellbot
+!cmd/hellbot
+config.yml

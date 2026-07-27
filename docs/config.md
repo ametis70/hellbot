@@ -38,8 +38,8 @@ Prints event notifications to standard output.
 
 **Options**
 
-| Field      | Type   | Default           | Description                                                  |
-| ---------- | ------ | ----------------- | ------------------------------------------------------------ |
+| Field | Type | Default | Description |
+|---|---|---|---|
 | `timezone` | string | global `timezone` | Display timezone for timestamps. Overrides the global value. |
 
 **Example**
@@ -50,6 +50,53 @@ notifiers:
     type: stdout
     options:
       timezone: "America/Argentina/Buenos_Aires"
+```
+
+---
+
+### `discord`
+
+Sends event notifications to a Discord channel.
+
+**Prerequisites:**
+1. Create an application in the [Discord Developer Portal](https://discord.com/developers/applications)
+2. Enable the bot and copy the token
+3. Use the OAuth2 URL generator with `bot` scope and `Send Messages` permission to add the bot to your server
+4. Copy the [channel ID](https://support.discord.com/hc/en-us/articles/206346498) where alerts will be sent
+
+**Options**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `token` | string | yes (or `token_file`) | Discord bot token. Supports `${ENV_VAR}` interpolation. |
+| `token_file` | string | yes (or `token`) | Path to a file containing the bot token. |
+| `channel_id` | string | yes (or `channel_id_file`) | Discord channel ID. |
+| `channel_id_file` | string | yes (or `channel_id`) | Path to a file containing the channel ID. |
+
+`token` and `token_file` are mutually exclusive. Same for `channel_id` and `channel_id_file`.
+
+Times in Discord messages use Discord's native timestamp format (`<t:UNIX:f>`), which renders in the viewer's local timezone automatically — no timezone config needed.
+
+**Example — env var**
+
+```yaml
+notifiers:
+  - id: "my-server"
+    type: discord
+    options:
+      token: "${DISCORD_TOKEN}"
+      channel_id: "123456789012345678"
+```
+
+**Example — file-based secrets**
+
+```yaml
+notifiers:
+  - id: "my-server"
+    type: discord
+    options:
+      token_file: "/run/secrets/discord-token"
+      channel_id_file: "/run/secrets/discord-channel-id"
 ```
 
 ---
