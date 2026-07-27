@@ -41,6 +41,7 @@ Prints event notifications to standard output.
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `timezone` | string | global `timezone` | Display timezone for timestamps. Overrides the global value. |
+| `templates` | object | see [Templates](#templates) | Override default message templates. |
 
 **Example**
 
@@ -72,6 +73,7 @@ Sends event notifications to a Discord channel.
 | `token_file` | string | yes (or `token`) | Path to a file containing the bot token. |
 | `channel_id` | string | yes (or `channel_id_file`) | Discord channel ID. |
 | `channel_id_file` | string | yes (or `channel_id`) | Path to a file containing the channel ID. |
+| `templates` | object | see [Templates](#templates) | Override default message templates. |
 
 `token` and `token_file` are mutually exclusive. Same for `channel_id` and `channel_id_file`.
 
@@ -97,6 +99,73 @@ notifiers:
     options:
       token_file: "/run/secrets/discord-token"
       channel_id_file: "/run/secrets/discord-channel-id"
+```
+
+---
+
+## Templates
+
+Every notifier supports a `templates` block to override default message formats. All fields are optional — only set what you want to change, the rest uses the adapter's defaults.
+
+### Template keys
+
+| Key | Trigger |
+|---|---|
+| `defend_region_started` | A defend event starts in a normal region |
+| `defend_super_earth_started` | A defend event starts in Super Earth (region 0) |
+| `defend_region_succeeded` | A defend event in a normal region is won |
+| `defend_super_earth_succeeded` | A defend event in Super Earth is won |
+| `defend_region_failed` | A defend event in a normal region is lost |
+| `defend_super_earth_failed` | A defend event in Super Earth is lost |
+| `attack_homeworld_started` | An attack event against a faction homeworld starts |
+| `attack_succeeded` | An attack event is won |
+| `attack_failed` | An attack event is lost |
+
+### Template variables
+
+| Variable | Description | Example |
+|---|---|---|
+| `{FACTION}` | Enemy faction name | `Illuminate` |
+| `{REGION_NAME}` | Region name | `Orionis Region` |
+| `{REGION_NUMBER}` | Region number | `5` |
+| `{TOTAL_REGIONS}` | Total regions per faction | `10` |
+| `{START_TIME_FORMATTED}` | Start time formatted by the adapter | `2026-07-19T19:59:01Z` |
+| `{END_TIME_FORMATTED}` | End time formatted by the adapter | `2026-07-21T19:59:01Z` |
+| `{START_TIME_UNIX}` | Start time as Unix timestamp | `1784501941` |
+| `{END_TIME_UNIX}` | End time as Unix timestamp | `1784674741` |
+| `{PLAYERS}` | Players at event start | `184` |
+
+For Discord, use `<t:{END_TIME_UNIX}:f>` to get native Discord timestamp rendering in the viewer's local timezone.
+
+For stdout with ANSI colors, use escape sequences in the template string directly.
+
+### Example — custom Discord templates
+
+```yaml
+notifiers:
+  - id: "my-server"
+    type: discord
+    options:
+      token: "${DISCORD_TOKEN}"
+      channel_id: "123456789012345678"
+      templates:
+        defend_region_started: "🛡️ **{FACTION} offensive on {REGION_NAME} ({REGION_NUMBER}/{TOTAL_REGIONS})** — ends <t:{END_TIME_UNIX}:R>"
+        defend_super_earth_started: "🚨 @everyone **SUPER EARTH IS UNDER ATTACK BY THE {FACTION}!** Ends <t:{END_TIME_UNIX}:R>"
+        attack_succeeded: "🎉 Victory! The {FACTION} were crushed."
+```
+
+### Example — translated messages
+
+```yaml
+notifiers:
+  - id: "pt-stdout"
+    type: stdout
+    options:
+      timezone: "America/Sao_Paulo"
+      templates:
+        defend_region_started: "[defesa] iniciada — {FACTION} atacando {REGION_NAME} ({REGION_NUMBER}/{TOTAL_REGIONS}), termina {END_TIME_FORMATTED}"
+        defend_super_earth_started: "[defesa] iniciada — {FACTION} atacando a Super Terra, termina {END_TIME_FORMATTED}"
+        attack_succeeded: "[ataque] sucesso — {FACTION} derrotados"
 ```
 
 ---

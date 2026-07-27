@@ -11,58 +11,46 @@ func formatTime(t time.Time, loc *time.Location) string {
 	return t.In(loc).Format(time.RFC3339)
 }
 
-func formatMessage(msg domain.EventMessage, loc *time.Location) (string, error) {
-	var formattedMessage string
-
-	switch msg.Kind {
-	case domain.EventKindDefend:
-		formattedMessage = fmt.Sprintf(
-			"[defend] %s — Enemy: %v, Region: %d, Start: %v, End: %v",
-			msg.Transition,
-			msg.DefendEvent.Enemy,
-			msg.DefendEvent.Region,
-			formatTime(msg.DefendEvent.StartTime, loc),
-			formatTime(msg.DefendEvent.EndTime, loc),
-		)
-	case domain.EventKindAttack:
-		formattedMessage = fmt.Sprintf(
-			"[attack] %s — Enemy: %v, Start: %v, End: %v",
-			msg.Transition,
-			msg.AttackEvent.Enemy,
-			formatTime(msg.AttackEvent.StartTime, loc),
-			formatTime(msg.AttackEvent.EndTime, loc),
-		)
-	}
-
-	if formattedMessage == "" {
-		return "", fmt.Errorf("unknown event kind: %s", msg.Kind)
-	}
-
-	return formattedMessage, nil
-}
-
+// Options holds configuration for the stdout notifier.
 type Options struct {
-	Timezone *time.Location
+	Timezone  *time.Location
+	Templates *domain.Templates
 }
 
+// StdoutNotifier implements port.Notifier by printing to stdout.
 type StdoutNotifier struct {
-	opts Options
+	opts      Options
+	templates domain.Templates
 }
 
+// New creates a new StdoutNotifier.
 func New(opts Options) *StdoutNotifier {
 	if opts.Timezone == nil {
 		opts.Timezone = time.UTC
 	}
 
-	return &StdoutNotifier{opts: opts}
+	templates := DefaultTemplates()
+	if opts.Templates != nil {
+		templates = domain.MergeTemplates(templates, *opts.Templates)
+	}
+
+	return &StdoutNotifier{
+		opts:      opts,
+		templates: templates,
+	}
 }
 
+// Notify prints a formatted event message to stdout.
 func (n *StdoutNotifier) Notify(msg domain.EventMessage) error {
-	formattedMessage, err := formatMessage(msg, n.opts.Timezone)
+	text, err := domain.RenderEvent(n.templates, msg, TimeFormatter(n.opts.Timezone))
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(formattedMessage)
+	fmt.Println(text)
 	return nil
+}
+
+// formatMessage is kept for tests — delegates to domain.RenderEvent with default templates.
+func formatMessage(msg domain.EventMessage, loc *time.Location) (string, error) {
+	return domain.RenderEvent(DefaultTemplates(), msg, TimeFormatter(loc))
 }

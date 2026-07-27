@@ -13,13 +13,15 @@ import (
 type Options struct {
 	Token     string
 	ChannelID string
+	Templates *domain.Templates
 }
 
 // DiscordNotifier implements port.Notifier by sending messages to a Discord channel.
 type DiscordNotifier struct {
-	opts    Options
-	session *discordgo.Session
-	logger  *slog.Logger
+	opts      Options
+	session   *discordgo.Session
+	logger    *slog.Logger
+	templates domain.Templates
 }
 
 // New creates a new DiscordNotifier, opens a Discord session, and validates connectivity.
@@ -45,10 +47,16 @@ func New(opts Options, logger *slog.Logger) (*DiscordNotifier, error) {
 		return nil, fmt.Errorf("discord notifier: opening session: %w", err)
 	}
 
+	templates := DefaultTemplates()
+	if opts.Templates != nil {
+		templates = domain.MergeTemplates(templates, *opts.Templates)
+	}
+
 	return &DiscordNotifier{
-		opts:    opts,
-		session: session,
-		logger:  logger,
+		opts:      opts,
+		session:   session,
+		logger:    logger,
+		templates: templates,
 	}, nil
 }
 
@@ -59,9 +67,9 @@ func (n *DiscordNotifier) Close() error {
 
 // Notify sends a formatted event message to the configured Discord channel.
 func (n *DiscordNotifier) Notify(msg domain.EventMessage) error {
-	text, err := formatMessage(msg)
+	text, err := domain.RenderEvent(n.templates, msg, TimeFormatter(nil))
 	if err != nil {
-		return err
+		return fmt.Errorf("discord notifier: rendering message: %w", err)
 	}
 
 	_, err = n.session.ChannelMessageSend(n.opts.ChannelID, text)
@@ -72,75 +80,11 @@ func (n *DiscordNotifier) Notify(msg domain.EventMessage) error {
 	return nil
 }
 
-// formatMessage builds a Discord message string for an event.
-// Times use Discord's native timestamp format <t:UNIX:f> which renders
-// in the viewer's local timezone automatically.
+// formatMessage is kept for tests — delegates to domain.RenderEvent with default templates.
 func formatMessage(msg domain.EventMessage) (string, error) {
-	switch msg.Kind {
-	case domain.EventKindDefend:
-		if msg.DefendEvent == nil {
-			return "", fmt.Errorf("discord notifier: defend event is nil")
-		}
-		return formatDefendMessage(msg.Transition, msg.DefendEvent), nil
-	case domain.EventKindAttack:
-		if msg.AttackEvent == nil {
-			return "", fmt.Errorf("discord notifier: attack event is nil")
-		}
-		return formatAttackMessage(msg.Transition, msg.AttackEvent), nil
-	}
-	return "", fmt.Errorf("discord notifier: unknown event kind: %s", msg.Kind)
+	return domain.RenderEvent(DefaultTemplates(), msg, TimeFormatter(nil))
 }
 
 func discordTimestamp(unix int64) string {
 	return fmt.Sprintf("<t:%d:f>", unix)
-}
-
-func formatDefendMessage(transition domain.EventTransition, e *domain.DefendEvent) string {
-	region := domain.GetRegion(e.Enemy, e.Region)
-
-	switch transition {
-	case domain.EventTransitionStarted:
-		if domain.IsSuperEarth(e.Region) {
-			return fmt.Sprintf(
-				"🚨 **The %s is attacking Super Earth!**\nEnds: %s",
-				e.Enemy,
-				discordTimestamp(e.EndTime.Unix()),
-			)
-		}
-		return fmt.Sprintf(
-			"⚔️ **The %s is attacking %s (%d/%d)!**\nEnds: %s",
-			e.Enemy,
-			region.Name,
-			e.Region,
-			domain.TotalRegions,
-			discordTimestamp(e.EndTime.Unix()),
-		)
-	case domain.EventTransitionSucceeded:
-		if domain.IsSuperEarth(e.Region) {
-			return fmt.Sprintf("✅ **Super Earth has been defended against the %s!**", e.Enemy)
-		}
-		return fmt.Sprintf("✅ **%s (%d/%d) has been defended against the %s!**", region.Name, e.Region, domain.TotalRegions, e.Enemy)
-	case domain.EventTransitionFailed:
-		if domain.IsSuperEarth(e.Region) {
-			return fmt.Sprintf("❌ **Super Earth has fallen to the %s.**", e.Enemy)
-		}
-		return fmt.Sprintf("❌ **%s (%d/%d) has fallen to the %s.**", region.Name, e.Region, domain.TotalRegions, e.Enemy)
-	}
-	return fmt.Sprintf("[defend] %s — %s %s", transition, e.Enemy, region.Name)
-}
-
-func formatAttackMessage(transition domain.EventTransition, e *domain.AttackEvent) string {
-	switch transition {
-	case domain.EventTransitionStarted:
-		return fmt.Sprintf(
-			"🚀 **An attack against the %s's homeworld has started!**\nEnds: %s",
-			e.Enemy,
-			discordTimestamp(e.EndTime.Unix()),
-		)
-	case domain.EventTransitionSucceeded:
-		return fmt.Sprintf("✅ **Attack succeeded! The %s were defeated.**", e.Enemy)
-	case domain.EventTransitionFailed:
-		return fmt.Sprintf("❌ **Attack failed! The %s defended their homeworld.**", e.Enemy)
-	}
-	return fmt.Sprintf("[attack] %s — %s", transition, e.Enemy)
 }
