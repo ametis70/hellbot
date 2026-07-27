@@ -119,12 +119,12 @@ func formatDefendMessage(transition domain.EventTransition, e *domain.DefendEven
 		if domain.IsSuperEarth(e.Region) {
 			return fmt.Sprintf("✅ **Super Earth has been defended against the %s!**", e.Enemy)
 		}
-		return fmt.Sprintf("✅ **%s has been defended against the %s!**", region.Name, e.Enemy)
+		return fmt.Sprintf("✅ **%s (%d/%d) has been defended against the %s!**", region.Name, e.Region, domain.TotalRegions, e.Enemy)
 	case domain.EventTransitionFailed:
 		if domain.IsSuperEarth(e.Region) {
 			return fmt.Sprintf("❌ **Super Earth has fallen to the %s.**", e.Enemy)
 		}
-		return fmt.Sprintf("❌ **%s has fallen to the %s.**", region.Name, e.Enemy)
+		return fmt.Sprintf("❌ **%s (%d/%d) has fallen to the %s.**", region.Name, e.Region, domain.TotalRegions, e.Enemy)
 	}
 	return fmt.Sprintf("[defend] %s — %s %s", transition, e.Enemy, region.Name)
 }
