@@ -121,6 +121,38 @@ func ResolveDiscordOptions(raw RawOptions) (DiscordOptions, error) {
 	return opts, nil
 }
 
+// ResolveTelegramOptions decodes, validates, and resolves telegram notifier options.
+func ResolveTelegramOptions(raw RawOptions) (TelegramOptions, error) {
+	opts := TelegramOptions{}
+	if raw == nil {
+		return opts, fmt.Errorf("telegram options are required")
+	}
+
+	data, err := yaml.Marshal(raw)
+	if err != nil {
+		return opts, fmt.Errorf("marshaling telegram options: %w", err)
+	}
+	if err := yaml.Unmarshal(data, &opts); err != nil {
+		return opts, fmt.Errorf("parsing telegram options: %w", err)
+	}
+
+	token, err := resolveValue("token", opts.Token, opts.TokenFile)
+	if err != nil {
+		return opts, fmt.Errorf("telegram token: %w", err)
+	}
+	opts.Token = token
+	opts.TokenFile = ""
+
+	chatID, err := resolveValue("chat_id", opts.ChatID, opts.ChatIDFile)
+	if err != nil {
+		return opts, fmt.Errorf("telegram chat_id: %w", err)
+	}
+	opts.ChatID = chatID
+	opts.ChatIDFile = ""
+
+	return opts, nil
+}
+
 // ResolveStdoutOptions decodes and validates stdout notifier options., resolves env vars and secrets,
 // validates all notifier options, and returns a parsed Config.
 func Load(path string) (*Config, error) {
@@ -178,6 +210,10 @@ func Load(path string) (*Config, error) {
 			}
 		case NotifierTypeDiscord:
 			if _, err := ResolveDiscordOptions(n.Options); err != nil {
+				return nil, fmt.Errorf("notifier %q: %w", n.ID, err)
+			}
+		case NotifierTypeTelegram:
+			if _, err := ResolveTelegramOptions(n.Options); err != nil {
 				return nil, fmt.Errorf("notifier %q: %w", n.ID, err)
 			}
 		default:

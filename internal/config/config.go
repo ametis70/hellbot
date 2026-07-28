@@ -6,8 +6,9 @@ import "time"
 type NotifierType string
 
 const (
-	NotifierTypeStdout  NotifierType = "stdout"
-	NotifierTypeDiscord NotifierType = "discord"
+	NotifierTypeStdout   NotifierType = "stdout"
+	NotifierTypeDiscord  NotifierType = "discord"
+	NotifierTypeTelegram NotifierType = "telegram"
 )
 
 // RawOptions holds unparsed YAML options for a notifier.
@@ -33,6 +34,17 @@ type DiscordOptions struct {
 	TokenFile     string `yaml:"token_file"`
 	ChannelID     string `yaml:"channel_id"`
 	ChannelIDFile string `yaml:"channel_id_file"`
+}
+
+// TelegramOptions holds parsed options for the telegram notifier.
+// Token and TokenFile are mutually exclusive — exactly one must be set.
+// ChatID and ChatIDFile are mutually exclusive — exactly one must be set.
+type TelegramOptions struct {
+	Token      string `yaml:"token"`
+	TokenFile  string `yaml:"token_file"`
+	ChatID     string `yaml:"chat_id"`
+	ChatIDFile string `yaml:"chat_id_file"`
+	Timezone   string `yaml:"timezone"`
 }
 
 // Config is the top-level configuration structure.
