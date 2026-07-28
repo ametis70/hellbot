@@ -165,7 +165,7 @@ func TestRenderEvent_DefendSucceeded(t *testing.T) {
 	if !strings.Contains(result, "Pictor Sector") {
 		t.Errorf("expected region name, got: %s", result)
 	}
-	if !strings.Contains(result, "Cyborg") {
+	if !strings.Contains(result, "Cyborgs") {
 		t.Errorf("expected faction name, got: %s", result)
 	}
 }
@@ -198,7 +198,7 @@ func TestRenderEvent_AttackHomeworldStarted(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(result, "Cyborg") {
+	if !strings.Contains(result, "Cyborgs") {
 		t.Errorf("expected faction name, got: %s", result)
 	}
 }
@@ -230,7 +230,7 @@ func TestRenderEvent_AttackFailed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(result, "Bug") {
+	if !strings.Contains(result, "Bugs") {
 		t.Errorf("expected faction name, got: %s", result)
 	}
 }

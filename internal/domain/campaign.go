@@ -16,11 +16,11 @@ const (
 func (e Enemy) String() string {
 	switch e {
 	case EnemyCyborg:
-		return "Cyborg"
+		return "Cyborgs"
 	case EnemyIlluminate:
 		return "Illuminate"
 	case EnemyBug:
-		return "Bug"
+		return "Bugs"
 	default:
 		return fmt.Sprintf("Unknown(%d)", int(e))
 	}

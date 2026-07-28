@@ -10,8 +10,8 @@ import (
 // Times use {END_TIME_FORMATTED} rendered in the configured timezone.
 func DefaultTemplates() domain.Templates {
 	return domain.Templates{
-		DefendRegionStarted:       "⚔️ *The {FACTION} is attacking {REGION_NAME} \\({REGION_NUMBER}/{TOTAL_REGIONS}\\)\\!*\nEnds: {END_TIME_FORMATTED}",
-		DefendSuperEarthStarted:   "🚨 *The {FACTION} is attacking Super Earth\\!*\nEnds: {END_TIME_FORMATTED}",
+		DefendRegionStarted:       "⚔️ *The {FACTION} are attacking {REGION_NAME} \\({REGION_NUMBER}/{TOTAL_REGIONS}\\)\\!*\nEnds: {END_TIME_FORMATTED}",
+		DefendSuperEarthStarted:   "🚨 *The {FACTION} are attacking Super Earth\\!*\nEnds: {END_TIME_FORMATTED}",
 		DefendRegionSucceeded:     "✅ *{REGION_NAME} \\({REGION_NUMBER}/{TOTAL_REGIONS}\\) has been defended against the {FACTION}\\!*",
 		DefendSuperEarthSucceeded: "✅ *Super Earth has been defended against the {FACTION}\\!*",
 		DefendRegionFailed:        "❌ *{REGION_NAME} \\({REGION_NUMBER}/{TOTAL_REGIONS}\\) has fallen to the {FACTION}\\.*",
