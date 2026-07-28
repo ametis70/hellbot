@@ -12,6 +12,7 @@ import (
 	"github.com/ametis70/hellbot/internal/adapter/api/helldivers1api"
 	discordnotifier "github.com/ametis70/hellbot/internal/adapter/notifier/discord"
 	"github.com/ametis70/hellbot/internal/adapter/notifier/stdout"
+	telegramnotifier "github.com/ametis70/hellbot/internal/adapter/notifier/telegram"
 	"github.com/ametis70/hellbot/internal/adapter/store/memory"
 	"github.com/ametis70/hellbot/internal/app"
 	"github.com/ametis70/hellbot/internal/config"
@@ -80,6 +81,34 @@ func main() {
 			}
 			closers = append(closers, dn.Close)
 			notifiers = append(notifiers, dn)
+			logger.Info("registered notifier", "id", n.ID, "type", n.Type)
+
+		case config.NotifierTypeTelegram:
+			opts, err := config.ResolveTelegramOptions(n.Options)
+			if err != nil {
+				logger.Error("invalid telegram notifier options", "id", n.ID, "error", err)
+				os.Exit(1)
+			}
+			tz := globalTZ
+			if opts.Timezone != "" {
+				tz, err = time.LoadLocation(opts.Timezone)
+				if err != nil {
+					logger.Error("invalid timezone", "id", n.ID, "timezone", opts.Timezone, "error", err)
+					os.Exit(1)
+				}
+			}
+			tn, err := telegramnotifier.New(telegramnotifier.Options{
+				Token:     opts.Token,
+				ChatID:    opts.ChatID,
+				Timezone:  tz,
+				Templates: opts.Templates,
+			}, logger)
+			if err != nil {
+				logger.Error("failed to create telegram notifier", "id", n.ID, "error", err)
+				os.Exit(1)
+			}
+			notifiers = append(notifiers, tn)
+			closers = append(closers, tn.Close)
 			logger.Info("registered notifier", "id", n.ID, "type", n.Type)
 		}
 	}
