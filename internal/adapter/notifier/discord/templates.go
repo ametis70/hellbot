@@ -11,8 +11,8 @@ import (
 // Times use Discord's native <t:UNIX:f> format which renders in the viewer's local timezone.
 func DefaultTemplates() domain.Templates {
 	return domain.Templates{
-		DefendRegionStarted:       "⚔️ **The {FACTION} is attacking {REGION_NAME} ({REGION_NUMBER}/{TOTAL_REGIONS})!**\nEnds: <t:{END_TIME_UNIX}:f>",
-		DefendSuperEarthStarted:   "🚨 **The {FACTION} is attacking Super Earth!**\nEnds: <t:{END_TIME_UNIX}:f>",
+		DefendRegionStarted:       "⚔️ **The {FACTION} are attacking {REGION_NAME} ({REGION_NUMBER}/{TOTAL_REGIONS})!**\nEnds: <t:{END_TIME_UNIX}:f>",
+		DefendSuperEarthStarted:   "🚨 **The {FACTION} are attacking Super Earth!**\nEnds: <t:{END_TIME_UNIX}:f>",
 		DefendRegionSucceeded:     "✅ **{REGION_NAME} ({REGION_NUMBER}/{TOTAL_REGIONS}) has been defended against the {FACTION}!**",
 		DefendSuperEarthSucceeded: "✅ **Super Earth has been defended against the {FACTION}!**",
 		DefendRegionFailed:        "❌ **{REGION_NAME} ({REGION_NUMBER}/{TOTAL_REGIONS}) has fallen to the {FACTION}.**",
@@ -20,6 +20,8 @@ func DefaultTemplates() domain.Templates {
 		AttackHomeworldStarted:    "🚀 **An attack against the {FACTION}'s homeworld has started!**\nEnds: <t:{END_TIME_UNIX}:f>",
 		AttackSucceeded:           "✅ **Attack succeeded! The {FACTION} were defeated.**",
 		AttackFailed:              "❌ **Attack failed! The {FACTION} defended their homeworld.**",
+		WarWon:                    "🏆 **Managed Democracy prevails! All enemies have been crushed and freedom spreads across the galaxy. (War {SEASON})**",
+		WarLost:                   "💀 **The war is lost. Super Earth has fallen. (War {SEASON})**",
 	}
 }
 

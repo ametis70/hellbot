@@ -83,8 +83,9 @@ func (p *Poller) notify(msg domain.EventMessage) {
 func (p *Poller) handleEvents(current, previous *domain.CampaignStatus) bool {
 	defendEventsChanged := p.handleDefendEvent(current, previous)
 	attackEventsChanged := p.handleAttackEvents(current)
+	warEventsChanged := p.handleWarEvents(current, previous)
 
-	return defendEventsChanged || attackEventsChanged
+	return defendEventsChanged || attackEventsChanged || warEventsChanged
 }
 
 func (p *Poller) handleDefendEvent(current, previous *domain.CampaignStatus) bool {
@@ -245,4 +246,41 @@ func (p *Poller) handleAttackEvents(current *domain.CampaignStatus) bool {
 		}
 	}
 	return changed
+}
+
+func (p *Poller) handleWarEvents(current, previous *domain.CampaignStatus) bool {
+	if len(previous.FactionsStatus) == 0 || len(current.FactionsStatus) == 0 {
+		return false
+	}
+
+	prevSeason := previous.FactionsStatus[0].Season
+	currSeason := current.FactionsStatus[0].Season
+	if prevSeason == currSeason {
+		return false
+	}
+
+	// Season changed — determine outcome from the previous season's final state.
+	// War is won if all non-hidden factions were defeated.
+	allDefeated := true
+	for _, f := range previous.FactionsStatus {
+		if f.Status == domain.FactionStatusHidden {
+			continue
+		}
+		if f.Status != domain.FactionStatusDefeated {
+			allDefeated = false
+			break
+		}
+	}
+
+	transition := domain.EventTransitionFailed
+	if allDefeated {
+		transition = domain.EventTransitionSucceeded
+	}
+
+	p.notify(domain.EventMessage{
+		Kind:       domain.EventKindWar,
+		Transition: transition,
+		WarEvent:   &domain.WarEvent{Season: prevSeason},
+	})
+	return true
 }

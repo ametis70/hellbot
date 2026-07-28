@@ -19,6 +19,8 @@ type Templates struct {
 	AttackHomeworldStarted    string `yaml:"attack_homeworld_started"`
 	AttackSucceeded           string `yaml:"attack_succeeded"`
 	AttackFailed              string `yaml:"attack_failed"`
+	WarWon                    string `yaml:"war_won"`
+	WarLost                   string `yaml:"war_lost"`
 }
 
 // MergeTemplates merges user-provided templates over defaults.
@@ -52,12 +54,19 @@ func MergeTemplates(defaults, user Templates) Templates {
 	if user.AttackFailed != "" {
 		result.AttackFailed = user.AttackFailed
 	}
+	if user.WarWon != "" {
+		result.WarWon = user.WarWon
+	}
+	if user.WarLost != "" {
+		result.WarLost = user.WarLost
+	}
 	return result
 }
 
 // TemplateVars holds all substitution variables for template rendering.
 type TemplateVars struct {
 	Faction            string
+	Season             string
 	RegionName         string
 	RegionNumber       string
 	TotalRegions       string
@@ -72,6 +81,7 @@ type TemplateVars struct {
 func Render(tmpl string, vars TemplateVars) string {
 	r := strings.NewReplacer(
 		"{FACTION}", vars.Faction,
+		"{SEASON}", vars.Season,
 		"{REGION_NAME}", vars.RegionName,
 		"{REGION_NUMBER}", vars.RegionNumber,
 		"{TOTAL_REGIONS}", vars.TotalRegions,
@@ -109,6 +119,13 @@ func BuildAttackVars(e *AttackEvent, formatTime func(time.Time) string) Template
 		StartTimeUnix:      fmt.Sprintf("%d", e.StartTime.Unix()),
 		EndTimeUnix:        fmt.Sprintf("%d", e.EndTime.Unix()),
 		Players:            fmt.Sprintf("%d", e.PlayersAtStart),
+	}
+}
+
+// BuildWarVars builds template variables for a war event.
+func BuildWarVars(e *WarEvent) TemplateVars {
+	return TemplateVars{
+		Season: fmt.Sprintf("%d", e.Season),
 	}
 }
 
@@ -150,6 +167,18 @@ func RenderEvent(templates Templates, msg EventMessage, formatTime func(time.Tim
 			return Render(templates.AttackSucceeded, vars), nil
 		case EventTransitionFailed:
 			return Render(templates.AttackFailed, vars), nil
+		}
+
+	case EventKindWar:
+		if msg.WarEvent == nil {
+			return "", fmt.Errorf("war event is nil")
+		}
+		vars := BuildWarVars(msg.WarEvent)
+		switch msg.Transition {
+		case EventTransitionSucceeded:
+			return Render(templates.WarWon, vars), nil
+		case EventTransitionFailed:
+			return Render(templates.WarLost, vars), nil
 		}
 	}
 
