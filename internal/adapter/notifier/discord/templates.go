@@ -20,6 +20,8 @@ func DefaultTemplates() domain.Templates {
 		AttackHomeworldStarted:    "🚀 **An attack against the {FACTION}'s homeworld has started!**\nEnds: <t:{END_TIME_UNIX}:f>",
 		AttackSucceeded:           "✅ **Attack succeeded! The {FACTION} were defeated.**",
 		AttackFailed:              "❌ **Attack failed! The {FACTION} defended their homeworld.**",
+		WarWon:                    "🏆 **Managed Democracy prevails! All enemies have been crushed and freedom spreads across the galaxy. (War {SEASON})**",
+		WarLost:                   "💀 **The war is lost. Super Earth has fallen. (War {SEASON})**",
 	}
 }
 

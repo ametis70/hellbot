@@ -19,6 +19,8 @@ func DefaultTemplates() domain.Templates {
 		AttackHomeworldStarted:    "[attack] started — against {FACTION} homeworld, ends {END_TIME_FORMATTED}",
 		AttackSucceeded:           "[attack] succeeded — {FACTION} defeated",
 		AttackFailed:              "[attack] failed — {FACTION} defended homeworld",
+		WarWon:                    "[war] won — Managed Democracy prevails! All enemies crushed, freedom spreads (war {SEASON})",
+		WarLost:                   "[war] lost — Super Earth has fallen (war {SEASON})",
 	}
 }
 

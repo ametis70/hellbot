@@ -5,6 +5,7 @@ type EventKind string
 const (
 	EventKindDefend EventKind = "defend"
 	EventKindAttack EventKind = "attack"
+	EventKindWar    EventKind = "war"
 )
 
 type EventTransition string
@@ -20,9 +21,14 @@ type OngoingEvent struct {
 	Kind EventKind
 }
 
+type WarEvent struct {
+	Season int
+}
+
 type EventMessage struct {
 	Kind        EventKind
 	Transition  EventTransition
 	DefendEvent *DefendEvent
 	AttackEvent *AttackEvent
+	WarEvent    *WarEvent
 }
