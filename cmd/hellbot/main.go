@@ -58,7 +58,10 @@ func main() {
 					os.Exit(1)
 				}
 			}
-			notifiers = append(notifiers, stdout.New(stdout.Options{Timezone: tz}))
+			notifiers = append(notifiers, stdout.New(stdout.Options{
+				Timezone:  tz,
+				Templates: opts.Templates,
+			}))
 			logger.Info("registered notifier", "id", n.ID, "type", n.Type)
 
 		case config.NotifierTypeDiscord:
@@ -70,6 +73,7 @@ func main() {
 			dn, err := discordnotifier.New(discordnotifier.Options{
 				Token:     opts.Token,
 				ChannelID: opts.ChannelID,
+				Templates: opts.Templates,
 			}, logger)
 			if err != nil {
 				logger.Error("failed to create discord notifier", "id", n.ID, "error", err)

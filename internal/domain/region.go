@@ -20,7 +20,7 @@ const SuperEarthRegion = 0
 // Source: https://helldivers.wiki.gg/wiki/Helldivers_1:Galactic_Campaign
 var regionNames = map[Enemy]map[int]Region{
 	EnemyCyborg: {
-		0:  {Name: "Sol System", Capital: "Super Earth"},
+		0:  {Name: "Super Earth", Capital: "Super Earth"},
 		1:  {Name: "Sirius Region", Capital: "Stockholm City"},
 		2:  {Name: "Polaris Region", Capital: "Thunder Head"},
 		3:  {Name: "Pictor Sector", Capital: "New Moscow"},
@@ -34,7 +34,7 @@ var regionNames = map[Enemy]map[int]Region{
 		11: {Name: "Cyberstan Region", Capital: "Cyberstan"},
 	},
 	EnemyBug: {
-		0:  {Name: "Sol System", Capital: "Super Earth"},
+		0:  {Name: "Super Earth", Capital: "Super Earth"},
 		1:  {Name: "Wise Region", Capital: "New New York"},
 		2:  {Name: "Kruger System", Capital: "Liberty City"},
 		3:  {Name: "Ross System", Capital: "Tiberia"},
@@ -48,7 +48,7 @@ var regionNames = map[Enemy]map[int]Region{
 		11: {Name: "Kepler System", Capital: "Kepler Prime"},
 	},
 	EnemyIlluminate: {
-		0:  {Name: "Sol System", Capital: "Super Earth"},
+		0:  {Name: "Super Earth", Capital: "Super Earth"},
 		1:  {Name: "Centaury Region", Capital: "New Hanover"},
 		2:  {Name: "Barnard Region", Capital: "Iron Tower"},
 		3:  {Name: "Procyon Region", Capital: "White Landing"},
