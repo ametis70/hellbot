@@ -17,9 +17,10 @@ const apiBase = "https://api.telegram.org"
 
 // Options holds configuration for a Telegram notifier instance.
 type Options struct {
-	Token    string
-	ChatID   string
-	Timezone *time.Location
+	Token     string
+	ChatID    string
+	Timezone  *time.Location
+	Templates *domain.Templates
 }
 
 // update is a partial Telegram Update object used for command polling.
@@ -38,11 +39,12 @@ type update struct {
 // TelegramNotifier implements port.Notifier by sending messages to a Telegram chat.
 // It also polls for bot commands and handles /test.
 type TelegramNotifier struct {
-	opts   Options
-	client *http.Client
-	logger *slog.Logger
-	cancel context.CancelFunc
-	done   chan struct{}
+	opts      Options
+	client    *http.Client
+	logger    *slog.Logger
+	templates domain.Templates
+	cancel    context.CancelFunc
+	done      chan struct{}
 }
 
 // New creates a new TelegramNotifier, validates options, and starts the command polling loop.
@@ -61,14 +63,20 @@ func New(opts Options, logger *slog.Logger) (*TelegramNotifier, error) {
 		opts.Timezone = time.UTC
 	}
 
+	templates := DefaultTemplates()
+	if opts.Templates != nil {
+		templates = domain.MergeTemplates(templates, *opts.Templates)
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	n := &TelegramNotifier{
-		opts:   opts,
-		client: &http.Client{Timeout: 10 * time.Second},
-		logger: logger,
-		cancel: cancel,
-		done:   make(chan struct{}),
+		opts:      opts,
+		client:    &http.Client{Timeout: 10 * time.Second},
+		logger:    logger,
+		templates: templates,
+		cancel:    cancel,
+		done:      make(chan struct{}),
 	}
 
 	go n.pollCommands(ctx)
@@ -85,9 +93,9 @@ func (n *TelegramNotifier) Close() error {
 
 // Notify sends a formatted event message to the configured Telegram chat.
 func (n *TelegramNotifier) Notify(msg domain.EventMessage) error {
-	text, err := formatMessage(msg, n.opts.Timezone)
+	text, err := domain.RenderEvent(n.templates, msg, TimeFormatter(n.opts.Timezone))
 	if err != nil {
-		return err
+		return fmt.Errorf("telegram notifier: rendering message: %w", err)
 	}
 
 	return n.sendMessage(text)
@@ -232,23 +240,6 @@ func (n *TelegramNotifier) sendMessage(text string) error {
 	return nil
 }
 
-// formatMessage builds a Telegram MarkdownV2 message string for an event.
-func formatMessage(msg domain.EventMessage, loc *time.Location) (string, error) {
-	switch msg.Kind {
-	case domain.EventKindDefend:
-		if msg.DefendEvent == nil {
-			return "", fmt.Errorf("telegram notifier: defend event is nil")
-		}
-		return formatDefendMessage(msg.Transition, msg.DefendEvent, loc), nil
-	case domain.EventKindAttack:
-		if msg.AttackEvent == nil {
-			return "", fmt.Errorf("telegram notifier: attack event is nil")
-		}
-		return formatAttackMessage(msg.Transition, msg.AttackEvent, loc), nil
-	}
-	return "", fmt.Errorf("telegram notifier: unknown event kind: %s", msg.Kind)
-}
-
 // escape escapes special MarkdownV2 characters in plain text.
 func escape(s string) string {
 	specials := `\_*[]()~` + "`" + `>#+-=|{}.!`
@@ -263,54 +254,4 @@ func escape(s string) string {
 		out = append(out, s[i])
 	}
 	return string(out)
-}
-
-func formatDefendMessage(transition domain.EventTransition, e *domain.DefendEvent, loc *time.Location) string {
-	region := domain.GetRegion(e.Enemy, e.Region)
-
-	switch transition {
-	case domain.EventTransitionStarted:
-		if domain.IsSuperEarth(e.Region) {
-			return fmt.Sprintf(
-				"🚨 *The %s is attacking Super Earth\\!*\nEnds: %s",
-				escape(e.Enemy.String()),
-				escape(e.EndTime.In(loc).Format("2006-01-02 15:04 MST")),
-			)
-		}
-		return fmt.Sprintf(
-			"⚔️ *The %s is attacking %s \\(%d/%d\\)\\!*\nEnds: %s",
-			escape(e.Enemy.String()),
-			escape(region.Name),
-			e.Region,
-			domain.TotalRegions,
-			escape(e.EndTime.In(loc).Format("2006-01-02 15:04 MST")),
-		)
-	case domain.EventTransitionSucceeded:
-		if domain.IsSuperEarth(e.Region) {
-			return fmt.Sprintf("✅ *Super Earth has been defended against the %s\\!*", escape(e.Enemy.String()))
-		}
-		return fmt.Sprintf("✅ *%s \\(%d/%d\\) has been defended against the %s\\!*", escape(region.Name), e.Region, domain.TotalRegions, escape(e.Enemy.String()))
-	case domain.EventTransitionFailed:
-		if domain.IsSuperEarth(e.Region) {
-			return fmt.Sprintf("❌ *Super Earth has fallen to the %s\\.*", escape(e.Enemy.String()))
-		}
-		return fmt.Sprintf("❌ *%s \\(%d/%d\\) has fallen to the %s\\.*", escape(region.Name), e.Region, domain.TotalRegions, escape(e.Enemy.String()))
-	}
-	return fmt.Sprintf("[defend] %s — %s %s", transition, e.Enemy, region.Name)
-}
-
-func formatAttackMessage(transition domain.EventTransition, e *domain.AttackEvent, loc *time.Location) string {
-	switch transition {
-	case domain.EventTransitionStarted:
-		return fmt.Sprintf(
-			"🚀 *An attack against the %s's homeworld has started\\!*\nEnds: %s",
-			escape(e.Enemy.String()),
-			escape(e.EndTime.In(loc).Format("2006-01-02 15:04 MST")),
-		)
-	case domain.EventTransitionSucceeded:
-		return fmt.Sprintf("✅ *Attack succeeded\\! The %s were defeated\\.*", escape(e.Enemy.String()))
-	case domain.EventTransitionFailed:
-		return fmt.Sprintf("❌ *Attack failed\\! The %s defended their homeworld\\.*", escape(e.Enemy.String()))
-	}
-	return fmt.Sprintf("[attack] %s — %s", transition, e.Enemy)
 }

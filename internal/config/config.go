@@ -46,11 +46,12 @@ type DiscordOptions struct {
 // Token and TokenFile are mutually exclusive — exactly one must be set.
 // ChatID and ChatIDFile are mutually exclusive — exactly one must be set.
 type TelegramOptions struct {
-	Token      string `yaml:"token"`
-	TokenFile  string `yaml:"token_file"`
-	ChatID     string `yaml:"chat_id"`
-	ChatIDFile string `yaml:"chat_id_file"`
-	Timezone   string `yaml:"timezone"`
+	Token      string            `yaml:"token"`
+	TokenFile  string            `yaml:"token_file"`
+	ChatID     string            `yaml:"chat_id"`
+	ChatIDFile string            `yaml:"chat_id_file"`
+	Timezone   string            `yaml:"timezone"`
+	Templates  *domain.Templates `yaml:"templates"`
 }
 
 // Config is the top-level configuration structure.

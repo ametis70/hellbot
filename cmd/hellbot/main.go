@@ -98,9 +98,10 @@ func main() {
 				}
 			}
 			tn, err := telegramnotifier.New(telegramnotifier.Options{
-				Token:    opts.Token,
-				ChatID:   opts.ChatID,
-				Timezone: tz,
+				Token:     opts.Token,
+				ChatID:    opts.ChatID,
+				Timezone:  tz,
+				Templates: opts.Templates,
 			}, logger)
 			if err != nil {
 				logger.Error("failed to create telegram notifier", "id", n.ID, "error", err)
