@@ -146,7 +146,11 @@ func (n *TelegramNotifier) getUpdates(ctx context.Context, offset int) ([]update
 	if err != nil {
 		return nil, fmt.Errorf("getUpdates request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			n.logger.Error("telegram notifier: closing getUpdates response body", "error", err)
+		}
+	}()
 
 	var result struct {
 		OK     bool     `json:"ok"`
@@ -215,7 +219,11 @@ func (n *TelegramNotifier) sendMessage(text string) error {
 	if err != nil {
 		return fmt.Errorf("telegram notifier: sending message: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			n.logger.Error("telegram notifier: closing sendMessage response body", "error", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("telegram notifier: unexpected status %d", resp.StatusCode)
