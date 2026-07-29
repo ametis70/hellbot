@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ametis70/hellbot/internal/adapter/api/helldivers1api"
+	mockfetcher "github.com/ametis70/hellbot/internal/adapter/api/mock"
 	discordnotifier "github.com/ametis70/hellbot/internal/adapter/notifier/discord"
 	"github.com/ametis70/hellbot/internal/adapter/notifier/stdout"
 	telegramnotifier "github.com/ametis70/hellbot/internal/adapter/notifier/telegram"
@@ -120,7 +121,22 @@ func main() {
 		logger.Warn("no notifiers configured — events will be detected but not reported")
 	}
 
-	fetcher := helldivers1api.New(helldivers1api.DefaultOptions(), logger)
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	// Build fetcher
+	var fetcher port.Fetcher
+	if cfg.Dev.MockServer {
+		logger.Warn("dev.mock_server is enabled — using built-in war scenario, not the real API")
+		fetcher = mockfetcher.New(cancel, logger)
+	} else {
+		apiOpts := helldivers1api.DefaultOptions()
+		if cfg.Dev.APIURL != "" {
+			apiOpts.BaseURL = cfg.Dev.APIURL
+			logger.Info("dev.api_url override", "url", apiOpts.BaseURL)
+		}
+		fetcher = helldivers1api.New(apiOpts, logger)
+	}
 
 	// Build store
 	var store interface {
@@ -176,9 +192,6 @@ func main() {
 	}
 
 	poller := app.New(fetcher, store, store, notifiers, cfg.PollInterval, logger)
-
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
 
 	logger.Info("hellbot starting", "config", configPath, "poll_interval", cfg.PollInterval)
 	if err := poller.Run(ctx); err != nil {

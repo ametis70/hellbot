@@ -210,6 +210,7 @@ func Load(path string) (*Config, error) {
 
 	cfg := &Config{
 		Timezone:  raw.Timezone,
+		Dev:       raw.Dev,
 		Store:     raw.Store,
 		Notifiers: raw.Notifiers,
 	}

@@ -50,6 +50,11 @@ func (p *Poller) Run(ctx context.Context) error {
 	}
 }
 
+// PollOnce executes a single poll cycle. It is intended for use in tests.
+func (p *Poller) PollOnce() {
+	p.poll()
+}
+
 func (p *Poller) poll() {
 	current, err := p.fetcher.FetchCampaign()
 	if err != nil {

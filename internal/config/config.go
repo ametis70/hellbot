@@ -87,10 +87,22 @@ type StoreConfig struct {
 	Options RawOptions `yaml:"options"`
 }
 
+// DevConfig holds development/testing options. These should never be set in production.
+type DevConfig struct {
+	// MockServer replaces the real Helldivers API fetcher with a built-in mock
+	// that plays back a scripted war scenario (one response per poll). The bot
+	// stops automatically when the scenario is exhausted.
+	MockServer bool `yaml:"mock_server"`
+	// APIURL overrides the Helldivers API base URL. Useful for pointing at a
+	// custom or self-hosted endpoint. Ignored when MockServer is true.
+	APIURL string `yaml:"api_url"`
+}
+
 // Config is the top-level configuration structure.
 type Config struct {
 	PollInterval time.Duration
 	Timezone     string           `yaml:"timezone"`
+	Dev          DevConfig        `yaml:"dev"`
 	Store        StoreConfig      `yaml:"store"`
 	Notifiers    []NotifierConfig `yaml:"notifiers"`
 }
@@ -99,6 +111,7 @@ type Config struct {
 type rawConfig struct {
 	PollInterval string           `yaml:"poll_interval"`
 	Timezone     string           `yaml:"timezone"`
+	Dev          DevConfig        `yaml:"dev"`
 	Store        StoreConfig      `yaml:"store"`
 	Notifiers    []NotifierConfig `yaml:"notifiers"`
 }
