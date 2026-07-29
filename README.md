@@ -15,13 +15,13 @@ hellbot monitors the [HELLDIVERS™](https://www.arrowheadgamestudios.com/abouta
 
 ## What it does
 
-- Polls the official Helldivers 1 API every 60 seconds
-- Detects when defend and attack events start, succeed, or fail
-- Broadcasts notifications to one or more configured receivers
-
-## Development
-
-See [docs/development.md](docs/development.md) for setup, running tests, building, and testing with Valkey.
+- Polls the official Helldivers 1 API on a configurable interval
+- Detects when defend events, attack events, and wars start, succeed, or fail
+- Sends notifications to one or more configured notifiers simultaneously
+- Supports **Discord**, **Telegram**, and **stdout** as notification targets
+- Persists state across restarts via a configurable store (**memory**, **SQLite**, or **Valkey/Redis**)
+- Supports fully customizable message templates per notifier
+- Supports per-notifier timezone overrides for timestamp formatting
 
 ## Configuration
 
@@ -50,6 +50,10 @@ services:
       - ./config.yml:/app/config.yml
     restart: unless-stopped
 ```
+
+## Development
+
+See [docs/development.md](docs/development.md) for setup, running tests, building, and testing stores locally.
 
 ## Contributing
 
