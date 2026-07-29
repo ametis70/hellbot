@@ -6,8 +6,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ametis70/hellbot/internal/domain"
 	"github.com/redis/go-redis/v9"
+
+	"github.com/ametis70/hellbot/internal/domain"
 )
 
 const (
