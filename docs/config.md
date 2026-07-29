@@ -168,14 +168,7 @@ notifiers:
 
 ### `discord`
 
-Sends event notifications to a Discord channel.
-
-**Prerequisites:**
-1. Create an application in the [Discord Developer Portal](https://discord.com/developers/applications)
-2. Enable the bot and copy the token
-3. Use the OAuth2 URL generator with `bot` and `applications.commands` scopes and `Send Messages` permission to add the bot to your server
-4. Copy the [channel ID](https://support.discord.com/hc/en-us/articles/206346498) where alerts will be sent
-5. (Recommended) Enable Developer Mode in Discord (**User Settings → Advanced → Developer Mode**), then right-click your server and **Copy Server ID** to get the `guild_id`
+Sends event notifications to a Discord channel. See the [Discord Developer Documentation](https://discord.com/developers/docs/intro) for instructions on creating a bot and retrieving a token and channel ID.
 
 **Options**
 
@@ -220,11 +213,7 @@ notifiers:
 
 ### `telegram`
 
-Sends event notifications to a Telegram chat.
-
-**Prerequisites:**
-1. Create a bot via [@BotFather](https://t.me/botfather) and copy the token
-2. Add the bot to your group/channel and copy the chat ID (you can get it from `https://api.telegram.org/bot<TOKEN>/getUpdates` after sending a message)
+Sends event notifications to a Telegram chat. See the [Telegram Bot API documentation](https://core.telegram.org/bots) for instructions on creating a bot and retrieving a token and chat ID.
 
 **Options**
 
