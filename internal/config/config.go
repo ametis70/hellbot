@@ -63,7 +63,15 @@ type StoreType string
 const (
 	StoreTypeMemory StoreType = "memory"
 	StoreTypeValkey StoreType = "valkey"
+	StoreTypeSQLite StoreType = "sqlite"
 )
+
+// SQLiteStoreOptions holds the path for the SQLite store.
+type SQLiteStoreOptions struct {
+	// Path is the file path for the SQLite database (e.g. "./hellbot.db").
+	// Defaults to "hellbot.db" in the working directory.
+	Path string `yaml:"path"`
+}
 
 // ValkeyStoreOptions holds connection parameters for the Valkey/Redis store.
 type ValkeyStoreOptions struct {

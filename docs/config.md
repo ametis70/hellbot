@@ -37,9 +37,52 @@ store:
 
 ---
 
+### `sqlite`
+
+Persists state in a local SQLite database file. State survives restarts with no external service required.
+
+**Options**
+
+| Field  | Type   | Default      | Description                                                                 |
+|--------|--------|--------------|-----------------------------------------------------------------------------|
+| `path` | string | `hellbot.db` | File path for the SQLite database. Supports `${ENV_VAR}`. Use `:memory:` for a non-persistent in-process database. |
+
+**Example**
+
+```yaml
+store:
+  type: sqlite
+  options:
+    path: "./data/hellbot.db"
+```
+
+**Example — Docker Compose**
+
+```yaml
+services:
+  hellbot:
+    image: ghcr.io/ametis70/hellbot:latest
+    volumes:
+      - ./config.yml:/app/config.yml
+      - hellbot-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  hellbot-data:
+```
+
+```yaml
+store:
+  type: sqlite
+  options:
+    path: "/app/data/hellbot.db"
+```
+
+---
+
 ### `valkey`
 
-Persists state in a [Valkey](https://valkey.io/) or Redis server. State survives restarts.
+Persists state in a [Valkey](https://valkey.io/) or Redis server. State survives restarts with no local file required.
 
 **Options**
 
