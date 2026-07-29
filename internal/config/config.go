@@ -57,10 +57,33 @@ type TelegramOptions struct {
 	Templates  *domain.Templates `yaml:"templates"`
 }
 
+// StoreType identifies the kind of backing store.
+type StoreType string
+
+const (
+	StoreTypeMemory StoreType = "memory"
+	StoreTypeValkey StoreType = "valkey"
+)
+
+// ValkeyStoreOptions holds connection parameters for the Valkey/Redis store.
+type ValkeyStoreOptions struct {
+	// Addr is the host:port of the server (default: "localhost:6379").
+	Addr     string `yaml:"addr"`
+	Password string `yaml:"password"`
+	DB       int    `yaml:"db"`
+}
+
+// StoreConfig holds the store type and its raw options.
+type StoreConfig struct {
+	Type    StoreType  `yaml:"type"`
+	Options RawOptions `yaml:"options"`
+}
+
 // Config is the top-level configuration structure.
 type Config struct {
 	PollInterval time.Duration
 	Timezone     string           `yaml:"timezone"`
+	Store        StoreConfig      `yaml:"store"`
 	Notifiers    []NotifierConfig `yaml:"notifiers"`
 }
 
@@ -68,5 +91,6 @@ type Config struct {
 type rawConfig struct {
 	PollInterval string           `yaml:"poll_interval"`
 	Timezone     string           `yaml:"timezone"`
+	Store        StoreConfig      `yaml:"store"`
 	Notifiers    []NotifierConfig `yaml:"notifiers"`
 }

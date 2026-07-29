@@ -12,7 +12,75 @@ hellbot is configured via a YAML file. The file location is resolved in this ord
 | --------------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
 | `poll_interval` | duration | `60s`   | How often to poll the Helldivers API. Accepts Go duration strings: `30s`, `2m`, `1h`.                            |
 | `timezone`      | string   | `UTC`   | Global display timezone (IANA format). Used by notifiers that format timestamps. Can be overridden per notifier. |
+| `store`         | object   | —       | Backing store configuration. See [Store](#store). Defaults to in-memory if omitted.                              |
 | `notifiers`     | list     | `[]`    | List of notifier configurations. See [Notifiers](#notifiers).                                                    |
+
+## Store
+
+hellbot uses a backing store to persist the last known campaign state and ongoing events across restarts. The default is an in-memory store (state is lost on restart).
+
+```yaml
+store:
+  type: <string>  # required — store type (memory, valkey)
+  options:        # optional — type-specific options
+    ...
+```
+
+### `memory` (default)
+
+No options. State is lost when the process exits. This is the default when `store:` is omitted entirely.
+
+```yaml
+store:
+  type: memory
+```
+
+---
+
+### `valkey`
+
+Persists state in a [Valkey](https://valkey.io/) or Redis server. State survives restarts.
+
+**Options**
+
+| Field      | Type   | Default            | Description                                                        |
+|------------|--------|--------------------|--------------------------------------------------------------------|
+| `addr`     | string | `localhost:6379`   | `host:port` of the Valkey/Redis server. Supports `${ENV_VAR}`.    |
+| `password` | string | —                  | Server password (if auth is required). Supports `${ENV_VAR}`.     |
+| `db`       | int    | `0`                | Redis database index (0–15).                                       |
+
+**Example**
+
+```yaml
+store:
+  type: valkey
+  options:
+    addr: "localhost:6379"
+    password: "${VALKEY_PASSWORD}"
+    db: 0
+```
+
+**Example — Docker Compose with a Valkey sidecar**
+
+```yaml
+services:
+  hellbot:
+    image: ghcr.io/ametis70/hellbot:latest
+    volumes:
+      - ./config.yml:/app/config.yml
+    environment:
+      VALKEY_PASSWORD: "s3cr3t"
+    depends_on:
+      - valkey
+    restart: unless-stopped
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    command: valkey-server --requirepass s3cr3t
+    restart: unless-stopped
+```
+
+---
 
 ## Notifiers
 
@@ -246,6 +314,11 @@ options:
 poll_interval: 60s
 timezone: "UTC"
 
+store:
+  type: valkey
+  options:
+    addr: "localhost:6379"
+
 notifiers:
   - id: "stdout-dev"
     type: stdout
@@ -262,6 +335,7 @@ hellbot validates the config at startup and exits immediately if:
 - A notifier is missing an `id`
 - Two notifiers share the same `id`
 - An unknown notifier `type` is specified
+- An unknown store `type` is specified
 - A timezone string is invalid
 - `poll_interval` is not a valid Go duration
 - A required field is missing or has conflicting values (e.g. both `token` and `token_file` set)
