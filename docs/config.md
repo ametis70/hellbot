@@ -62,8 +62,9 @@ Sends event notifications to a Discord channel.
 **Prerequisites:**
 1. Create an application in the [Discord Developer Portal](https://discord.com/developers/applications)
 2. Enable the bot and copy the token
-3. Use the OAuth2 URL generator with `bot` scope and `Send Messages` permission to add the bot to your server
+3. Use the OAuth2 URL generator with `bot` and `applications.commands` scopes and `Send Messages` permission to add the bot to your server
 4. Copy the [channel ID](https://support.discord.com/hc/en-us/articles/206346498) where alerts will be sent
+5. (Recommended) Enable Developer Mode in Discord (**User Settings → Advanced → Developer Mode**), then right-click your server and **Copy Server ID** to get the `guild_id`
 
 **Options**
 
@@ -73,11 +74,14 @@ Sends event notifications to a Discord channel.
 | `token_file` | string | yes (or `token`) | Path to a file containing the bot token. |
 | `channel_id` | string | yes (or `channel_id_file`) | Discord channel ID. |
 | `channel_id_file` | string | yes (or `channel_id`) | Path to a file containing the channel ID. |
+| `guild_id` | string | no | Discord server (guild) ID. When set, slash commands (`/status`, `/statistics`) are registered as guild commands and appear instantly. When omitted, commands are registered globally and may take up to 1 hour to propagate. |
 | `templates` | object | see [Templates](#templates) | Override default message templates. |
 
 `token` and `token_file` are mutually exclusive. Same for `channel_id` and `channel_id_file`.
 
 Times in Discord messages use Discord's native timestamp format (`<t:UNIX:f>`), which renders in the viewer's local timezone automatically — no timezone config needed.
+
+For available slash commands, see [commands.md](commands.md).
 
 **Example — env var**
 
@@ -103,6 +107,43 @@ notifiers:
 
 ---
 
+### `telegram`
+
+Sends event notifications to a Telegram chat.
+
+**Prerequisites:**
+1. Create a bot via [@BotFather](https://t.me/botfather) and copy the token
+2. Add the bot to your group/channel and copy the chat ID (you can get it from `https://api.telegram.org/bot<TOKEN>/getUpdates` after sending a message)
+
+**Options**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `token` | string | yes (or `token_file`) | Telegram bot token. Supports `${ENV_VAR}` interpolation. |
+| `token_file` | string | yes (or `token`) | Path to a file containing the bot token. |
+| `chat_id` | string | yes (or `chat_id_file`) | Telegram chat ID. |
+| `chat_id_file` | string | yes (or `chat_id`) | Path to a file containing the chat ID. |
+| `timezone` | string | global `timezone` | Display timezone for timestamps. Overrides the global value. |
+| `templates` | object | see [Templates](#templates) | Override default message templates. |
+
+`token` and `token_file` are mutually exclusive. Same for `chat_id` and `chat_id_file`.
+
+For available bot commands, see [commands.md](commands.md).
+
+**Example**
+
+```yaml
+notifiers:
+  - id: "my-group"
+    type: telegram
+    options:
+      token: "${TELEGRAM_TOKEN}"
+      chat_id: "${TELEGRAM_CHAT_ID}"
+      timezone: "Europe/Lisbon"
+```
+
+---
+
 ## Templates
 
 Every notifier supports a `templates` block to override default message formats. All fields are optional — only set what you want to change, the rest uses the adapter's defaults.
@@ -120,12 +161,15 @@ Every notifier supports a `templates` block to override default message formats.
 | `attack_homeworld_started` | An attack event against a faction homeworld starts |
 | `attack_succeeded` | An attack event is won |
 | `attack_failed` | An attack event is lost |
+| `war_won` | The war ends with all enemy factions defeated |
+| `war_lost` | The war ends without all factions being defeated (e.g. Super Earth fell) |
 
 ### Template variables
 
 | Variable | Description | Example |
 |---|---|---|
 | `{FACTION}` | Enemy faction name | `Illuminate` |
+| `{SEASON}` | War (season) number — available in `war_won` and `war_lost` | `159` |
 | `{REGION_NAME}` | Region name | `Orionis Region` |
 | `{REGION_NUMBER}` | Region number | `5` |
 | `{TOTAL_REGIONS}` | Total regions per faction | `10` |

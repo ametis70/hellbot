@@ -86,8 +86,8 @@ func TestFetchCampaign_Success(t *testing.T) {
 	if campaign.DefendEvent.ID != 5080 {
 		t.Errorf("expected defend event ID 5080, got %d", campaign.DefendEvent.ID)
 	}
-	if campaign.DefendEvent.Enemy != domain.EnemyIlluminate {
-		t.Errorf("expected enemy Illuminate, got %v", campaign.DefendEvent.Enemy)
+	if campaign.DefendEvent.Enemy != domain.EnemyCyborg {
+		t.Errorf("expected enemy Cyborgs, got %v", campaign.DefendEvent.Enemy)
 	}
 	if len(campaign.AttackEvents) != 1 {
 		t.Errorf("expected 1 attack event, got %d", len(campaign.AttackEvents))

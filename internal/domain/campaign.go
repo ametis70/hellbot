@@ -8,9 +8,9 @@ import (
 type Enemy int
 
 const (
-	EnemyCyborg     Enemy = 0
-	EnemyIlluminate Enemy = 1
-	EnemyBug        Enemy = 2
+	EnemyBug        Enemy = 0
+	EnemyCyborg     Enemy = 1
+	EnemyIlluminate Enemy = 2
 )
 
 func (e Enemy) String() string {
@@ -43,6 +43,7 @@ const (
 )
 
 type FactionStatus struct {
+	Enemy             Enemy
 	Season            int
 	Points            int
 	PointsTaken       int

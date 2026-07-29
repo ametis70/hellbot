@@ -73,6 +73,7 @@ func main() {
 			dn, err := discordnotifier.New(discordnotifier.Options{
 				Token:     opts.Token,
 				ChannelID: opts.ChannelID,
+				GuildID:   opts.GuildID,
 				Templates: opts.Templates,
 			}, logger)
 			if err != nil {
@@ -119,6 +120,13 @@ func main() {
 
 	fetcher := helldivers1api.New(helldivers1api.DefaultOptions(), logger)
 	store := memory.New()
+
+	// Register interactive commands on notifiers that support them.
+	for _, n := range notifiers {
+		if c, ok := n.(port.Commander); ok {
+			c.RegisterCommands(store)
+		}
+	}
 
 	poller := app.New(fetcher, store, store, notifiers, cfg.PollInterval, logger)
 

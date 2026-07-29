@@ -116,8 +116,9 @@ type apiCampaignStatus struct {
 	Statistics    []apiStatistics    `json:"statistics"`
 }
 
-func toDomainFactionStatus(a apiFactionStatus) domain.FactionStatus {
+func toDomainFactionStatus(a apiFactionStatus, enemy domain.Enemy) domain.FactionStatus {
 	return domain.FactionStatus{
+		Enemy:             enemy,
 		Season:            a.Season,
 		Points:            a.Points,
 		PointsTaken:       a.PointsTaken,
@@ -183,7 +184,7 @@ func toDomainStatistics(a apiStatistics) domain.Statistics {
 func toDomainCampaign(a apiCampaignStatus) *domain.CampaignStatus {
 	factions := make([]domain.FactionStatus, len(a.FactionStatus))
 	for i, f := range a.FactionStatus {
-		factions[i] = toDomainFactionStatus(f)
+		factions[i] = toDomainFactionStatus(f, domain.Enemy(i))
 	}
 
 	attacks := make([]domain.AttackEvent, len(a.AttackEvents))
