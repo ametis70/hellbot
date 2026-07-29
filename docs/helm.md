@@ -85,7 +85,9 @@ notifiers:
       channel_id:
         existingSecret: "hellbot-secrets"
         existingSecretKey: "discord-channel-id"
-      guild_id: "987654321098765432"   # optional, for instant slash command registration
+      guild_id:
+        existingSecret: "hellbot-secrets"
+        existingSecretKey: "discord-guild-id"
       templates:
         defend_super_earth_started: "🚨 @everyone Super Earth is under attack by the {FACTION}!"
 ```

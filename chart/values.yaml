@@ -150,6 +150,7 @@ serviceAccount:
   create: true
   name: ""
   annotations: {}
+  automount: false
 
 podAnnotations: {}
 podLabels: {}
