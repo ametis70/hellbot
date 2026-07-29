@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/ametis70/hellbot/compare/v1.2.0...v1.2.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* add workdir to dockerfile ([db82ae1](https://github.com/ametis70/hellbot/commit/db82ae1441a0bdf9f8615ea44d2973ecda883a1b))
+
 ## [1.2.0](https://github.com/ametis70/hellbot/compare/v1.1.0...v1.2.0) (2026-07-29)
 
 
