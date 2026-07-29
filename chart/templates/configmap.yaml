@@ -1,0 +1,107 @@
+{{/*
+configmap.yaml — renders hellbot's config.yml from Helm values.
+
+The config is mounted into the container at /app/config.yml.
+
+For every sensitive field, regardless of whether the value is inline or an
+existingSecret reference, the config always uses the _file variant pointing
+at /run/secrets/<filePath>. The actual file is placed there by the projected
+volume in the Deployment — this template does not need to care about the
+source.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "hellbot.fullname" . }}
+  labels:
+    {{- include "hellbot.labels" . | nindent 4 }}
+data:
+  config.yml: |
+    poll_interval: {{ .Values.pollInterval | quote }}
+    timezone: {{ .Values.timezone | quote }}
+
+    store:
+      type: {{ .Values.store.type }}
+      {{- if eq .Values.store.type "sqlite" }}
+      options:
+        path: {{ .Values.store.sqlite.path | quote }}
+      {{- end }}
+      {{- if eq .Values.store.type "valkey" }}
+      options:
+        addr: {{ .Values.store.valkey.addr | quote }}
+        db: {{ .Values.store.valkey.db }}
+        {{- if include "hellbot.hasValue" .Values.store.valkey.password }}
+        password_file: "/run/secrets/valkey-password"
+        {{- end }}
+      {{- end }}
+
+    {{- if .Values.notifiers }}
+    notifiers:
+      {{- range .Values.notifiers }}
+      - id: {{ .id | quote }}
+        type: {{ .type | quote }}
+        {{- $id := .id }}
+        {{- $type := .type }}
+        {{- $opts := .options | default dict }}
+        options:
+          {{- if eq $type "discord" }}
+          {{- if include "hellbot.hasValue" $opts.token }}
+          token_file: {{ printf "/run/secrets/discord-%s-token" $id | quote }}
+          {{- end }}
+          {{- if include "hellbot.hasValue" $opts.channel_id }}
+          channel_id_file: {{ printf "/run/secrets/discord-%s-channel-id" $id | quote }}
+          {{- end }}
+          {{- if include "hellbot.hasValue" $opts.guild_id }}
+          guild_id_file: {{ printf "/run/secrets/discord-%s-guild-id" $id | quote }}
+          {{- end }}
+          {{- if $opts.templates }}
+          templates:
+            {{- range $k, $v := $opts.templates }}
+            {{ $k }}: {{ $v | quote }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+
+          {{- if eq $type "telegram" }}
+          {{- if include "hellbot.hasValue" $opts.token }}
+          token_file: {{ printf "/run/secrets/telegram-%s-token" $id | quote }}
+          {{- end }}
+          {{- if include "hellbot.hasValue" $opts.chat_id }}
+          chat_id_file: {{ printf "/run/secrets/telegram-%s-chat-id" $id | quote }}
+          {{- end }}
+          {{- if $opts.timezone }}
+          timezone: {{ $opts.timezone | quote }}
+          {{- end }}
+          {{- if $opts.templates }}
+          templates:
+            {{- range $k, $v := $opts.templates }}
+            {{ $k }}: {{ $v | quote }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+
+          {{- if eq $type "webhook" }}
+          {{- if include "hellbot.hasValue" $opts.url }}
+          url_file: {{ printf "/run/secrets/webhook-%s-url" $id | quote }}
+          {{- end }}
+          {{- if $opts.secret_header }}
+          secret_header: {{ $opts.secret_header | quote }}
+          {{- end }}
+          {{- if include "hellbot.hasValue" $opts.secret_value }}
+          secret_value_file: {{ printf "/run/secrets/webhook-%s-secret-value" $id | quote }}
+          {{- end }}
+          {{- end }}
+
+          {{- if eq $type "stdout" }}
+          {{- if $opts.timezone }}
+          timezone: {{ $opts.timezone | quote }}
+          {{- end }}
+          {{- if $opts.templates }}
+          templates:
+            {{- range $k, $v := $opts.templates }}
+            {{ $k }}: {{ $v | quote }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+      {{- end }}
+    {{- end }}

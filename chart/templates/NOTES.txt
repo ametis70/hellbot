@@ -1,0 +1,29 @@
+hellbot has been deployed.
+
+Store type: {{ .Values.store.type }}
+{{- if eq .Values.store.type "sqlite" }}
+SQLite database path: {{ .Values.store.sqlite.path }}
+  {{- if .Values.store.sqlite.persistence.enabled }}
+Persistence: PVC {{ include "hellbot.fullname" . }}-data ({{ .Values.store.sqlite.persistence.size }})
+  {{- else }}
+Persistence: DISABLED — state will be lost on restart (emptyDir)
+  {{- end }}
+{{- end }}
+{{- if eq .Values.store.type "valkey" }}
+Valkey address: {{ .Values.store.valkey.addr }} (db {{ .Values.store.valkey.db }})
+{{- end }}
+
+{{- if .Values.notifiers }}
+Notifiers configured:
+  {{- range .Values.notifiers }}
+  - {{ .id }} ({{ .type }})
+  {{- end }}
+{{- else }}
+WARNING: No notifiers configured. hellbot will detect events but not send them anywhere.
+{{- end }}
+
+To check logs:
+  kubectl logs -l app.kubernetes.io/instance={{ .Release.Name }} -n {{ .Release.Namespace }}
+
+To upgrade:
+  helm upgrade {{ .Release.Name }} ./chart -n {{ .Release.Namespace }} -f my-values.yaml

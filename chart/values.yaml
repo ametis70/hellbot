@@ -1,0 +1,181 @@
+# values.yaml — hellbot Helm chart
+#
+# All keys here are the defaults. Override any of them in your own values file
+# and pass it with: helm install hellbot ./chart -f my-values.yaml
+#
+# Secret strategy
+# ---------------
+# Sensitive values (bot tokens, passwords, etc.) are placed in a Kubernetes
+# Secret and mounted into the container at /run/secrets/. The config.yml
+# rendered in the ConfigMap uses the _file variant of each option to read from
+# that path. You never need to put plaintext secrets in the config itself.
+#
+# To provide a secret value set the corresponding key under `secrets:` — see
+# the section below.
+
+# ---------------------------------------------------------------------------
+# Image
+# ---------------------------------------------------------------------------
+image:
+  repository: ghcr.io/ametis70/hellbot
+  tag: ""            # defaults to .Chart.AppVersion when empty
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# ---------------------------------------------------------------------------
+# hellbot application config
+# ---------------------------------------------------------------------------
+
+# How often hellbot polls the Helldivers 1 API. Accepts Go duration strings.
+pollInterval: "60s"
+
+# Global display timezone (IANA format). Notifiers that format timestamps use
+# this unless they override it individually.
+timezone: "UTC"
+
+# ---------------------------------------------------------------------------
+# Store
+# ---------------------------------------------------------------------------
+# Controls how hellbot persists the last known campaign state across restarts.
+# type: memory  — default, state is lost on restart, no extra config needed
+# type: sqlite  — persists to a local SQLite file, requires a PVC
+# type: valkey  — persists to a Valkey/Redis server
+#
+store:
+  type: memory   # memory | sqlite | valkey
+
+  # sqlite options — only used when store.type is "sqlite"
+  sqlite:
+    # Path inside the container. Must live on the PVC when persistence is
+    # desired. The chart mounts the PVC at /data when sqlite is selected.
+    path: "/data/hellbot.db"
+
+    # Persistence — creates a PersistentVolumeClaim for the sqlite file.
+    persistence:
+      enabled: true
+      storageClassName: ""   # leave empty to use the cluster default
+      size: "10Mi"
+      accessMode: ReadWriteOnce
+
+  # valkey/redis options — only used when store.type is "valkey"
+  valkey:
+    addr: "localhost:6379"
+    db: 0
+    # password accepts a plain string or an existingSecret reference:
+    #   password: "s3cr3t"
+    # or:
+    #   password:
+    #     existingSecret: "my-k8s-secret"
+    #     existingSecretKey: "valkey-password"
+    password: ""
+
+# ---------------------------------------------------------------------------
+# Notifiers
+# ---------------------------------------------------------------------------
+# A list of notifier definitions. Each entry mirrors the hellbot config format
+# exactly. Sensitive string fields (token, channel_id, chat_id, secret_value)
+# accept either a plain string (chart creates and manages the Secret) or an
+# existingSecret reference (you manage the Secret yourself).
+#
+# Plain string — chart creates a Secret and mounts the value as a file:
+#
+#   token: "OTE5MjEwOTE1MzAyMzUw..."
+#
+# existingSecret reference — chart mounts a key from your own Secret as a file:
+#
+#   token:
+#     existingSecret: "my-k8s-secret"
+#     existingSecretKey: "discord-token"
+#
+# In both cases the config.yml rendered inside the container uses the _file
+# variant of the option, pointing at /run/secrets/<derived-path>. You never
+# need to think about that wiring.
+#
+# Supported types: stdout, discord, telegram, webhook
+#
+# Example — Discord notifier with an existing Secret for the token:
+#
+#   notifiers:
+#     - id: my-server
+#       type: discord
+#       options:
+#         token:
+#           existingSecret: "my-k8s-secret"
+#           existingSecretKey: "discord-token"
+#         channel_id: "123456789012345678"
+#         guild_id: "987654321098765432"     # optional
+#         templates:
+#           defend_super_earth_started: "🚨 @everyone Super Earth is under attack!"
+#
+# Example — Telegram notifier with inline secrets (chart manages them):
+#
+#   notifiers:
+#     - id: my-group
+#       type: telegram
+#       options:
+#         token: "8955731953:AAFs8NUG3iu..."
+#         chat_id: "-1001234567890"
+#         timezone: "Europe/Lisbon"
+#
+# Example — Webhook notifier:
+#
+#   notifiers:
+#     - id: my-webhook
+#       type: webhook
+#       options:
+#         url: "https://example.com/hellbot/events"
+#         secret_header: "Authorization"
+#         secret_value:
+#           existingSecret: "my-k8s-secret"
+#           existingSecretKey: "webhook-secret"
+#
+# Example — Stdout notifier (no secrets):
+#
+#   notifiers:
+#     - id: console
+#       type: stdout
+#       options:
+#         timezone: "America/New_York"
+#
+notifiers: []
+
+# ---------------------------------------------------------------------------
+# Kubernetes resource settings
+# ---------------------------------------------------------------------------
+
+replicaCount: 1
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 64Mi
+  # requests:
+  #   cpu: 50m
+  #   memory: 32Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Extra environment variables injected into the container. Useful for passing
+# ${ENV_VAR} references used inside the hellbot config (e.g. store addr).
+extraEnv: []
+# - name: VALKEY_ADDR
+#   value: "valkey-service:6379"
+
+# Extra volumes and volume mounts — for advanced use cases.
+extraVolumes: []
+extraVolumeMounts: []
