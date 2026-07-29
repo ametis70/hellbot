@@ -218,4 +218,3 @@ func formatMessage(msg domain.EventMessage) (string, error) {
 func discordTimestamp(unix int64) string {
 	return fmt.Sprintf("<t:%d:f>", unix)
 }
-

@@ -31,7 +31,7 @@ func FormatStatus(c *CampaignStatus, filter *Enemy) string {
 	if len(c.FactionsStatus) > 0 {
 		season = c.FactionsStatus[0].Season
 	}
-	sb.WriteString(fmt.Sprintf("War %d — Status\n\n", season))
+	fmt.Fprintf(&sb, "War %d — Status\n\n", season)
 
 	// Per-faction progress.
 	for _, f := range c.FactionsStatus {
@@ -142,13 +142,13 @@ func formatFactionStatus(f FactionStatus, c *CampaignStatus) string {
 	}
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("The %s (active)\n", f.Enemy.String()))
-	sb.WriteString(fmt.Sprintf("  %s %3d%%\n", totalBar, totalPct))
-	sb.WriteString(fmt.Sprintf("  %s / %s pts\n", fmtInt(f.Points), fmtInt(f.PointsMax)))
+	fmt.Fprintf(&sb, "The %s (active)\n", f.Enemy.String())
+	fmt.Fprintf(&sb, "  %s %3d%%\n", totalBar, totalPct)
+	fmt.Fprintf(&sb, "  %s / %s pts\n", fmtInt(f.Points), fmtInt(f.PointsMax))
 	sb.WriteString("\n")
-	sb.WriteString(fmt.Sprintf("  Sector %d/11: %s%s\n", sectorNum+1, region.Name, eventNote))
-	sb.WriteString(fmt.Sprintf("  %s %3d%%\n", progressBar(sectorPct, 10), sectorPct))
-	sb.WriteString(fmt.Sprintf("  %s / %s pts\n", fmtInt(sectorPoints), fmtInt(sectorPointsMax)))
+	fmt.Fprintf(&sb, "  Sector %d/11: %s%s\n", sectorNum+1, region.Name, eventNote)
+	fmt.Fprintf(&sb, "  %s %3d%%\n", progressBar(sectorPct, 10), sectorPct)
+	fmt.Fprintf(&sb, "  %s / %s pts\n", fmtInt(sectorPoints), fmtInt(sectorPointsMax))
 	sb.WriteString("\n")
 	return sb.String()
 }
@@ -184,7 +184,7 @@ func FormatStatistics(c *CampaignStatus) string {
 	if len(c.FactionsStatus) > 0 {
 		season = c.FactionsStatus[0].Season
 	}
-	sb.WriteString(fmt.Sprintf("War %d — Statistics\n\n", season))
+	fmt.Fprintf(&sb, "War %d — Statistics\n\n", season)
 
 	if len(c.Statistics) == 0 {
 		sb.WriteString("No statistics available.\n")
@@ -192,20 +192,20 @@ func FormatStatistics(c *CampaignStatus) string {
 	}
 
 	var (
-		players               int
-		totalUniquePlayers    int
-		missions              int
-		successfulMissions    int
-		completedPlanets      int
-		defendEvents          int
-		successfulDefend      int
-		attackEvents          int
-		successfulAttack      int
-		deaths                int
-		kills                 int
-		accidentals           int
-		shots                 int
-		hits                  int
+		players            int
+		totalUniquePlayers int
+		missions           int
+		successfulMissions int
+		completedPlanets   int
+		defendEvents       int
+		successfulDefend   int
+		attackEvents       int
+		successfulAttack   int
+		deaths             int
+		kills              int
+		accidentals        int
+		shots              int
+		hits               int
 	)
 
 	for _, s := range c.Statistics {
@@ -230,17 +230,17 @@ func FormatStatistics(c *CampaignStatus) string {
 	attackPct := pct(successfulAttack, attackEvents)
 	hitPct := pct(hits, shots)
 
-	sb.WriteString(fmt.Sprintf("Players online:     %s\n", fmtInt(players)))
-	sb.WriteString(fmt.Sprintf("Total players:      %s\n", fmtInt(totalUniquePlayers)))
-	sb.WriteString(fmt.Sprintf("Kills:              %s\n", fmtInt(kills)))
-	sb.WriteString(fmt.Sprintf("Deaths:             %s\n", fmtInt(deaths)))
-	sb.WriteString(fmt.Sprintf("Accidentals:        %s\n", fmtInt(accidentals)))
-	sb.WriteString(fmt.Sprintf("Shots fired:        %s\n", fmtInt(shots)))
-	sb.WriteString(fmt.Sprintf("Accuracy:           %d%%\n", hitPct))
-	sb.WriteString(fmt.Sprintf("Missions:           %s (%s successful, %d%%)\n", fmtInt(missions), fmtInt(successfulMissions), missionPct))
-	sb.WriteString(fmt.Sprintf("Defend events:      %s (%s successful, %d%%)\n", fmtInt(defendEvents), fmtInt(successfulDefend), defendPct))
-	sb.WriteString(fmt.Sprintf("Attack events:      %s (%s successful, %d%%)\n", fmtInt(attackEvents), fmtInt(successfulAttack), attackPct))
-	sb.WriteString(fmt.Sprintf("Planets liberated:  %s\n", fmtInt(completedPlanets)))
+	fmt.Fprintf(&sb, "Players online:     %s\n", fmtInt(players))
+	fmt.Fprintf(&sb, "Total players:      %s\n", fmtInt(totalUniquePlayers))
+	fmt.Fprintf(&sb, "Kills:              %s\n", fmtInt(kills))
+	fmt.Fprintf(&sb, "Deaths:             %s\n", fmtInt(deaths))
+	fmt.Fprintf(&sb, "Accidentals:        %s\n", fmtInt(accidentals))
+	fmt.Fprintf(&sb, "Shots fired:        %s\n", fmtInt(shots))
+	fmt.Fprintf(&sb, "Accuracy:           %d%%\n", hitPct)
+	fmt.Fprintf(&sb, "Missions:           %s (%s successful, %d%%)\n", fmtInt(missions), fmtInt(successfulMissions), missionPct)
+	fmt.Fprintf(&sb, "Defend events:      %s (%s successful, %d%%)\n", fmtInt(defendEvents), fmtInt(successfulDefend), defendPct)
+	fmt.Fprintf(&sb, "Attack events:      %s (%s successful, %d%%)\n", fmtInt(attackEvents), fmtInt(successfulAttack), attackPct)
+	fmt.Fprintf(&sb, "Planets liberated:  %s\n", fmtInt(completedPlanets))
 
 	return strings.TrimRight(sb.String(), "\n")
 }
