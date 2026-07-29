@@ -153,7 +153,29 @@ func ResolveTelegramOptions(raw RawOptions) (TelegramOptions, error) {
 	return opts, nil
 }
 
-// ResolveStdoutOptions decodes and validates stdout notifier options., resolves env vars and secrets,
+// ResolveValkeyStoreOptions decodes and validates Valkey/Redis store options.
+func ResolveValkeyStoreOptions(raw RawOptions) (ValkeyStoreOptions, error) {
+	opts := ValkeyStoreOptions{
+		Addr: "localhost:6379",
+	}
+	if raw == nil {
+		return opts, nil
+	}
+
+	data, err := yaml.Marshal(raw)
+	if err != nil {
+		return opts, fmt.Errorf("marshaling valkey options: %w", err)
+	}
+	if err := yaml.Unmarshal(data, &opts); err != nil {
+		return opts, fmt.Errorf("parsing valkey options: %w", err)
+	}
+	// Allow env var interpolation on addr and password.
+	opts.Addr = resolveEnvVars(opts.Addr)
+	opts.Password = resolveEnvVars(opts.Password)
+	return opts, nil
+}
+
+// Load reads, parses, resolves env vars and secrets,
 // validates all notifier options, and returns a parsed Config.
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
@@ -168,6 +190,7 @@ func Load(path string) (*Config, error) {
 
 	cfg := &Config{
 		Timezone:  raw.Timezone,
+		Store:     raw.Store,
 		Notifiers: raw.Notifiers,
 	}
 
@@ -190,6 +213,18 @@ func Load(path string) (*Config, error) {
 	// Validate global timezone is parseable
 	if _, err := parseTimezone(cfg.Timezone); err != nil {
 		return nil, err
+	}
+
+	// Validate store config
+	switch cfg.Store.Type {
+	case StoreTypeMemory, "":
+		cfg.Store.Type = StoreTypeMemory
+	case StoreTypeValkey:
+		if _, err := ResolveValkeyStoreOptions(cfg.Store.Options); err != nil {
+			return nil, fmt.Errorf("store: %w", err)
+		}
+	default:
+		return nil, fmt.Errorf("store: unknown type %q", cfg.Store.Type)
 	}
 
 	// Validate all notifiers

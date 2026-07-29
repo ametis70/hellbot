@@ -14,6 +14,7 @@ import (
 	"github.com/ametis70/hellbot/internal/adapter/notifier/stdout"
 	telegramnotifier "github.com/ametis70/hellbot/internal/adapter/notifier/telegram"
 	"github.com/ametis70/hellbot/internal/adapter/store/memory"
+	valkeystore "github.com/ametis70/hellbot/internal/adapter/store/valkey"
 	"github.com/ametis70/hellbot/internal/app"
 	"github.com/ametis70/hellbot/internal/config"
 	"github.com/ametis70/hellbot/internal/port"
@@ -119,7 +120,36 @@ func main() {
 	}
 
 	fetcher := helldivers1api.New(helldivers1api.DefaultOptions(), logger)
-	store := memory.New()
+
+	// Build store
+	var store interface {
+		port.CampaignStore
+		port.EventStore
+	}
+
+	switch cfg.Store.Type {
+	case config.StoreTypeValkey:
+		opts, err := config.ResolveValkeyStoreOptions(cfg.Store.Options)
+		if err != nil {
+			logger.Error("invalid valkey store options", "error", err)
+			os.Exit(1)
+		}
+		vs, err := valkeystore.New(valkeystore.Options{
+			Addr:     opts.Addr,
+			Password: opts.Password,
+			DB:       opts.DB,
+		})
+		if err != nil {
+			logger.Error("failed to connect to valkey", "error", err)
+			os.Exit(1)
+		}
+		closers = append(closers, vs.Close)
+		store = vs
+		logger.Info("store initialized", "type", "valkey", "addr", opts.Addr)
+	default:
+		store = memory.New()
+		logger.Info("store initialized", "type", "memory")
+	}
 
 	// Register interactive commands on notifiers that support them.
 	for _, n := range notifiers {

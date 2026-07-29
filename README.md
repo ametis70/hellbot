@@ -21,22 +21,7 @@ hellbot monitors the [HELLDIVERS™](https://www.arrowheadgamestudios.com/abouta
 
 ## Development
 
-```bash
-# Enter the dev shell (provides Go, gopls, and gotools)
-nix develop
-
-# Or with direnv
-direnv allow
-
-# Run tests
-go test ./...
-
-# Run with race detector
-go test -race ./...
-
-# Build
-go build ./cmd/hellbot
-```
+See [docs/development.md](docs/development.md) for setup, running tests, building, and testing with Valkey.
 
 ## Configuration
 
