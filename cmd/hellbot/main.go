@@ -145,10 +145,10 @@ func main() {
 		}
 		closers = append(closers, vs.Close)
 		store = vs
-		logger.Info("store: valkey", "addr", opts.Addr)
+		logger.Info("store initialized", "type", "valkey", "addr", opts.Addr)
 	default:
 		store = memory.New()
-		logger.Info("store: memory")
+		logger.Info("store initialized", "type", "memory")
 	}
 
 	// Register interactive commands on notifiers that support them.
