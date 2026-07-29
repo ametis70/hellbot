@@ -9,5 +9,6 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o hellbot ./cmd/hellbot
 FROM gcr.io/distroless/static:nonroot
 LABEL org.opencontainers.image.source="https://github.com/ametis70/hellbot"
 
+WORKDIR /app
 COPY --from=builder /app/hellbot /hellbot
 ENTRYPOINT ["/hellbot"]
