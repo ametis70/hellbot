@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/ametis70/hellbot/compare/v1.1.0...v1.2.0) (2026-07-29)
+
+
+### Features
+
+* improve dockerfile ([983bc6b](https://github.com/ametis70/hellbot/commit/983bc6b5a89b83180890e34c06b20fa7eb0f2b1e))
+
+
+### Bug Fixes
+
+* service account automount in helm chart ([cae48f7](https://github.com/ametis70/hellbot/commit/cae48f7561874631de5e9336938d8f633b44d121))
+
 ## [1.1.0](https://github.com/ametis70/hellbot/compare/v1.0.0...v1.1.0) (2026-07-29)
 
 
