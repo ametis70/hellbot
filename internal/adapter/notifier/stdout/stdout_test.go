@@ -106,3 +106,33 @@ func TestNew_DefaultsToUTC(t *testing.T) {
 		t.Error("expected default timezone to be UTC")
 	}
 }
+
+func TestNotify_SuccessDoesNotError(t *testing.T) {
+	n := New(Options{Timezone: time.UTC})
+	e := testutil.AttackEventActive()
+	err := n.Notify(domain.EventMessage{
+		Kind:        domain.EventKindAttack,
+		Transition:  domain.EventTransitionStarted,
+		AttackEvent: &e,
+	})
+	if err != nil {
+		t.Errorf("expected nil error, got %v", err)
+	}
+}
+
+func TestNotify_RenderErrorPropagated(t *testing.T) {
+	n := New(Options{Timezone: time.UTC})
+	// A message with an unknown kind causes RenderEvent to return an error.
+	err := n.Notify(domain.EventMessage{Kind: "bogus", Transition: "started"})
+	if err == nil {
+		t.Error("expected error for unrenderable message, got nil")
+	}
+}
+
+func TestNew_MergesTemplates(t *testing.T) {
+	custom := &domain.Templates{AttackSucceeded: "custom template"}
+	n := New(Options{Templates: custom})
+	if n.templates.AttackSucceeded != "custom template" {
+		t.Errorf("expected custom template to be merged, got %q", n.templates.AttackSucceeded)
+	}
+}

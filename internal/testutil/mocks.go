@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"errors"
 	"io"
 	"log/slog"
 	"sync"
@@ -14,7 +15,7 @@ func DiscardLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(io.Discard, nil))
 }
 
-// MockFetcher implements port.Fetcher
+// MockFetcher implements port.Fetcher.
 
 type MockFetcher struct {
 	Campaign *domain.CampaignStatus
@@ -25,7 +26,7 @@ func (m *MockFetcher) FetchCampaign() (*domain.CampaignStatus, error) {
 	return m.Campaign, m.Err
 }
 
-// MockNotifier implements port.Notifier — records all received messages
+// MockNotifier implements port.Notifier — records all received messages.
 
 type MockNotifier struct {
 	mu       sync.Mutex
@@ -67,4 +68,32 @@ func (m *MockNotifier) Last() *domain.EventMessage {
 		return nil
 	}
 	return &m.Messages[len(m.Messages)-1]
+}
+
+// ErrorStore implements port.CampaignStore and port.EventStore, returning
+// errors for every operation. Used to test error-handling paths in the poller.
+type ErrorStore struct{}
+
+func (e *ErrorStore) SaveCampaign(_ *domain.CampaignStatus) error {
+	return errors.New("store error")
+}
+
+func (e *ErrorStore) LatestCampaign() (*domain.CampaignStatus, error) {
+	return nil, errors.New("store error")
+}
+
+func (e *ErrorStore) SaveOngoingEvent(_ int, _ domain.EventKind) error {
+	return errors.New("store error")
+}
+
+func (e *ErrorStore) RemoveOngoingEvent(_ int, _ domain.EventKind) error {
+	return errors.New("store error")
+}
+
+func (e *ErrorStore) GetOngoingEvent(_ int, _ domain.EventKind) (*domain.OngoingEvent, error) {
+	return nil, errors.New("store error")
+}
+
+func (e *ErrorStore) ListOngoingEvents(_ domain.EventKind) ([]*domain.OngoingEvent, error) {
+	return nil, errors.New("store error")
 }

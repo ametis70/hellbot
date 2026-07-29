@@ -210,9 +210,15 @@ func (n *DiscordNotifier) Notify(msg domain.EventMessage) error {
 	return nil
 }
 
-// formatMessage is kept for tests — delegates to domain.RenderEvent with default templates.
-func formatMessage(msg domain.EventMessage) (string, error) {
+// FormatMessage renders an event message using the default Discord templates.
+// Exported for use in tests.
+func FormatMessage(msg domain.EventMessage) (string, error) {
 	return domain.RenderEvent(DefaultTemplates(), msg, TimeFormatter(nil))
+}
+
+// formatMessage is an unexported alias kept for internal tests.
+func formatMessage(msg domain.EventMessage) (string, error) {
+	return FormatMessage(msg)
 }
 
 func discordTimestamp(unix int64) string {

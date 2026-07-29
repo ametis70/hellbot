@@ -23,7 +23,12 @@ jobs:
       - name: Run tests
         run: |
           go test -v -coverprofile=coverage.out -covermode=atomic ./... | tee test.out
-          go tool cover -func=coverage.out >> test.out
+          # Compute coverage excluding non-testable packages (cmd/hellbot wires
+          # adapters and calls os.Exit; testutil contains test helpers only).
+          go tool cover -func=coverage.out \
+            | grep -v -E 'cmd/hellbot|/testutil/' \
+            | awk '/^[^t]/ { match($3,/([0-9.]+)%/,p); n+=1; s+=p[1] } END { printf "total:\t\t\t\t\t\t\t\t\t\t\t\t%.1f%%\n", s/n }' \
+            >> test.out
 
       - name: Upload badges to Gist
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

@@ -56,7 +56,24 @@ type APIAttackEvent struct {
 }
 
 type APIStatistics struct {
-	Season int `json:"season"`
+	Season                 int `json:"season"`
+	SeasonDuration         int `json:"season_duration"`
+	Enemy                  int `json:"enemy"`
+	Players                int `json:"players"`
+	TotalUniquePlayers     int `json:"total_unique_players"`
+	Missions               int `json:"missions"`
+	SuccessfulMissions     int `json:"successful_missions"`
+	TotalMissionDifficulty int `json:"total_mission_difficulty"`
+	CompletedPlanets       int `json:"completed_planets"`
+	DefendEvents           int `json:"defend_events"`
+	SuccessfulDefendEvents int `json:"successful_defend_events"`
+	AttackEvents           int `json:"attack_events"`
+	SuccessfulAttackEvents int `json:"successful_attack_events"`
+	Deaths                 int `json:"deaths"`
+	Kills                  int `json:"kills"`
+	Accidentals            int `json:"accidentals"`
+	Shots                  int `json:"shots"`
+	Hits                   int `json:"hits"`
 }
 
 // MockServer is an httptest.Server that serves Helldivers 1 API responses from
