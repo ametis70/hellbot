@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hellbot.fullname" . }}
+  labels:
+    {{- include "hellbot.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "hellbot.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      # Annotate the Pod with a hash of the ConfigMap and Secret so that
+      # Kubernetes rolls the Deployment whenever the config or secrets change.
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if eq (include "hellbot.hasInlineSecrets" .) "true" }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "hellbot.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "hellbot.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: hellbot
+          image: {{ include "hellbot.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.extraEnv }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.yml
+              subPath: config.yml
+              readOnly: true
+            {{- if eq (include "hellbot.hasAnySecrets" .) "true" }}
+            - name: secrets
+              mountPath: /run/secrets
+              readOnly: true
+            {{- end }}
+            {{- if eq .Values.store.type "sqlite" }}
+            - name: data
+              mountPath: /data
+            {{- end }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "hellbot.fullname" . }}
+        {{- if eq (include "hellbot.hasAnySecrets" .) "true" }}
+        {{- $fields := (include "hellbot.secretFields" . | fromJson).items }}
+        {{- $releaseName := include "hellbot.fullname" . }}
+        - name: secrets
+          projected:
+            sources:
+              {{- /* chart-managed Secret — one source covering all inline values */}}
+              {{- $hasInline := false }}
+              {{- range $fields }}
+                {{- if .inlineValue }}{{- $hasInline = true }}{{- end }}
+              {{- end }}
+              {{- if $hasInline }}
+              - secret:
+                  name: {{ $releaseName }}
+                  items:
+                    {{- range $fields }}
+                    {{- if .inlineValue }}
+                    - key: {{ .filePath }}
+                      path: {{ .filePath }}
+                    {{- end }}
+                    {{- end }}
+              {{- end }}
+              {{- /* external Secrets — one source per unique Secret name */}}
+              {{- $seen := dict }}
+              {{- range $fields }}
+              {{- if .existingSecret }}
+                {{- if not (hasKey $seen .existingSecret) }}
+                  {{- $_ := set $seen .existingSecret true }}
+                  {{- $secretName := .existingSecret }}
+              - secret:
+                  name: {{ $secretName }}
+                  items:
+                    {{- /* emit all fields that reference this same Secret */}}
+                    {{- range $fields }}
+                    {{- if eq (.existingSecret | default "") $secretName }}
+                    - key: {{ .existingSecretKey }}
+                      path: {{ .filePath }}
+                    {{- end }}
+                    {{- end }}
+                {{- end }}
+              {{- end }}
+              {{- end }}
+        {{- end }}
+        {{- if eq .Values.store.type "sqlite" }}
+        - name: data
+          {{- if .Values.store.sqlite.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "hellbot.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

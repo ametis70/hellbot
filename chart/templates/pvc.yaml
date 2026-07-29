@@ -1,0 +1,21 @@
+{{/*
+pvc.yaml — PersistentVolumeClaim for the sqlite store.
+Only created when store.type is "sqlite" and persistence is enabled.
+*/}}
+{{- if and (eq .Values.store.type "sqlite") .Values.store.sqlite.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "hellbot.fullname" . }}-data
+  labels:
+    {{- include "hellbot.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.store.sqlite.persistence.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.store.sqlite.persistence.size }}
+  {{- if .Values.store.sqlite.persistence.storageClassName }}
+  storageClassName: {{ .Values.store.sqlite.persistence.storageClassName | quote }}
+  {{- end }}
+{{- end }}

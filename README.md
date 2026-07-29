@@ -32,6 +32,8 @@ The config file location is resolved in this order:
 2. `HELLBOT_CONFIG` environment variable
 3. `./config.yml` in the working directory
 
+For available bot/slash commands see [docs/commands.md](docs/commands.md).
+
 ## Running
 
 ```sh
@@ -50,6 +52,10 @@ services:
       - ./config.yml:/app/config.yml
     restart: unless-stopped
 ```
+
+### Kubernetes
+
+See [docs/helm.md](docs/helm.md) for installation with Helm, FluxCD, and secrets management.
 
 ## Development
 
