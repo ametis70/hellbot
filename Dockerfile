@@ -1,13 +1,13 @@
-FROM golang:1.26-alpine
-LABEL org.opencontainers.image.source="https://github.com/ametis70/hellbot"
-
-RUN apk add build-base
+FROM golang:1.26 AS builder
 
 WORKDIR /app
-COPY . .
-VOLUME /app/db
-
+COPY go.mod go.sum ./
 RUN go mod download
-RUN go build -o hellbot ./cmd/hellbot
+COPY . .
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o hellbot ./cmd/hellbot
 
-CMD ["./hellbot"]
+FROM gcr.io/distroless/static:nonroot
+LABEL org.opencontainers.image.source="https://github.com/ametis70/hellbot"
+
+COPY --from=builder /app/hellbot /hellbot
+ENTRYPOINT ["/hellbot"]
