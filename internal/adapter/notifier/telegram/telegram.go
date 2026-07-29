@@ -22,6 +22,9 @@ type Options struct {
 	ChatID    string
 	Timezone  *time.Location
 	Templates *domain.Templates
+	// APIBase overrides the Telegram Bot API base URL. Defaults to
+	// "https://api.telegram.org". Intended for use in tests.
+	APIBase string
 }
 
 // update is a partial Telegram Update object used for command polling.
@@ -37,9 +40,9 @@ type update struct {
 	} `json:"message"`
 }
 
-// TelegramNotifier implements port.Notifier by sending messages to a Telegram chat.
+// Notifier implements port.Notifier by sending messages to a Telegram chat.
 // It also polls for bot commands and handles /test, /status, and /statistics.
-type TelegramNotifier struct {
+type Notifier struct {
 	opts      Options
 	client    *http.Client
 	logger    *slog.Logger
@@ -47,10 +50,11 @@ type TelegramNotifier struct {
 	cancel    context.CancelFunc
 	done      chan struct{}
 	provider  port.StatusProvider
+	apiBase   string
 }
 
-// New creates a new TelegramNotifier, validates options, and starts the command polling loop.
-func New(opts Options, logger *slog.Logger) (*TelegramNotifier, error) {
+// New creates a new Notifier, validates options, and starts the command polling loop.
+func New(opts Options, logger *slog.Logger) (*Notifier, error) {
 	if logger == nil {
 		panic("telegram notifier: logger is required")
 	}
@@ -72,13 +76,17 @@ func New(opts Options, logger *slog.Logger) (*TelegramNotifier, error) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	n := &TelegramNotifier{
+	n := &Notifier{
 		opts:      opts,
 		client:    &http.Client{Timeout: 10 * time.Second},
 		logger:    logger,
 		templates: templates,
 		cancel:    cancel,
 		done:      make(chan struct{}),
+		apiBase:   apiBase,
+	}
+	if opts.APIBase != "" {
+		n.apiBase = opts.APIBase
 	}
 
 	go n.pollCommands(ctx)
@@ -87,14 +95,14 @@ func New(opts Options, logger *slog.Logger) (*TelegramNotifier, error) {
 }
 
 // Close stops the command polling loop and waits for it to exit.
-func (n *TelegramNotifier) Close() error {
+func (n *Notifier) Close() error {
 	n.cancel()
 	<-n.done
 	return nil
 }
 
 // Notify sends a formatted event message to the configured Telegram chat.
-func (n *TelegramNotifier) Notify(msg domain.EventMessage) error {
+func (n *Notifier) Notify(msg domain.EventMessage) error {
 	text, err := domain.RenderEvent(n.templates, msg, TimeFormatter(n.opts.Timezone))
 	if err != nil {
 		return fmt.Errorf("telegram notifier: rendering message: %w", err)
@@ -104,7 +112,7 @@ func (n *TelegramNotifier) Notify(msg domain.EventMessage) error {
 }
 
 // pollCommands long-polls getUpdates and dispatches recognised bot commands.
-func (n *TelegramNotifier) pollCommands(ctx context.Context) {
+func (n *Notifier) pollCommands(ctx context.Context) {
 	defer close(n.done)
 
 	offset := 0
@@ -131,7 +139,7 @@ func (n *TelegramNotifier) pollCommands(ctx context.Context) {
 }
 
 // getUpdates calls the Telegram getUpdates API with long-polling (timeout=30s).
-func (n *TelegramNotifier) getUpdates(ctx context.Context, offset int) ([]update, error) {
+func (n *Notifier) getUpdates(ctx context.Context, offset int) ([]update, error) {
 	type params struct {
 		Offset  int `json:"offset"`
 		Timeout int `json:"timeout"`
@@ -145,7 +153,7 @@ func (n *TelegramNotifier) getUpdates(ctx context.Context, offset int) ([]update
 	// HTTP client timeout must exceed the long-poll timeout.
 	longPollClient := &http.Client{Timeout: 35 * time.Second}
 
-	url := fmt.Sprintf("%s/bot%s/getUpdates", apiBase, n.opts.Token)
+	url := fmt.Sprintf("%s/bot%s/getUpdates", n.apiBase, n.opts.Token)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("building getUpdates request: %w", err)
@@ -177,7 +185,7 @@ func (n *TelegramNotifier) getUpdates(ctx context.Context, offset int) ([]update
 }
 
 // handleUpdate dispatches a single update to the appropriate command handler.
-func (n *TelegramNotifier) handleUpdate(u update) {
+func (n *Notifier) handleUpdate(u update) {
 	if u.Message == nil {
 		return
 	}
@@ -206,12 +214,12 @@ func (n *TelegramNotifier) handleUpdate(u update) {
 }
 
 // RegisterCommands implements port.Commander.
-func (n *TelegramNotifier) RegisterCommands(provider port.StatusProvider) {
+func (n *Notifier) RegisterCommands(provider port.StatusProvider) {
 	n.provider = provider
 }
 
 // handleTestCommand sends a test message to the configured chat_id.
-func (n *TelegramNotifier) handleTestCommand() {
+func (n *Notifier) handleTestCommand() {
 	n.logger.Info("telegram notifier: /test command received, sending test message")
 	err := n.sendMessage("✅ hellbot is connected and can send messages to this chat\\.")
 	if err != nil {
@@ -220,7 +228,7 @@ func (n *TelegramNotifier) handleTestCommand() {
 }
 
 // handleStatusCommand responds to /status [faction].
-func (n *TelegramNotifier) handleStatusCommand(arg string) {
+func (n *Notifier) handleStatusCommand(arg string) {
 	if n.provider == nil {
 		n.logger.Warn("telegram notifier: /status received but no status provider registered")
 		return
@@ -248,7 +256,7 @@ func (n *TelegramNotifier) handleStatusCommand(arg string) {
 }
 
 // handleStatisticsCommand responds to /statistics.
-func (n *TelegramNotifier) handleStatisticsCommand() {
+func (n *Notifier) handleStatisticsCommand() {
 	if n.provider == nil {
 		n.logger.Warn("telegram notifier: /statistics received but no status provider registered")
 		return
@@ -268,7 +276,7 @@ func (n *TelegramNotifier) handleStatisticsCommand() {
 }
 
 // sendMessage calls the Telegram sendMessage API with MarkdownV2 parse mode.
-func (n *TelegramNotifier) sendMessage(text string) error {
+func (n *Notifier) sendMessage(text string) error {
 	type payload struct {
 		ChatID    string `json:"chat_id"`
 		Text      string `json:"text"`
@@ -284,7 +292,7 @@ func (n *TelegramNotifier) sendMessage(text string) error {
 		return fmt.Errorf("telegram notifier: marshaling payload: %w", err)
 	}
 
-	url := fmt.Sprintf("%s/bot%s/sendMessage", apiBase, n.opts.Token)
+	url := fmt.Sprintf("%s/bot%s/sendMessage", n.apiBase, n.opts.Token)
 	resp, err := n.client.Post(url, "application/json", bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("telegram notifier: sending message: %w", err)
