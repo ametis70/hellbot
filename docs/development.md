@@ -25,7 +25,68 @@ go test -race ./...
 go build ./cmd/hellbot
 ```
 
-## Testing with SQLite
+## Mock server
+
+The built-in mock server lets you run hellbot end-to-end without a real Helldivers API connection. Instead of polling the actual API, it plays back a scripted war scenario — one response per poll tick — and exits automatically when the scenario is exhausted.
+
+This is useful for verifying that your notifiers (Discord, Telegram, stdout) receive the correct messages without waiting for real in-game events.
+
+### Scenario
+
+The mock plays back a fixed 9-poll war sequence:
+
+| Poll | Event |
+|------|-------|
+| 1 | Idle — baseline stored, no diff |
+| 2 | Attack event starts → **attack started** notification |
+| 3 | Attack still active |
+| 4 | Attack succeeds → **attack succeeded** notification |
+| 5 | Idle |
+| 6 | Defend event starts → **defend started** notification |
+| 7 | Defend still active |
+| 8 | Defend succeeds, all factions defeated |
+| 9 | New season → **war won** notification |
+
+5 notifications total: attack started, attack succeeded, defend started, defend succeeded, war won.
+
+### Usage
+
+Add a `dev` block to your `config.yml` and set `poll_interval` to a short duration so the scenario plays back quickly:
+
+```yaml
+poll_interval: 1s
+
+dev:
+  mock_server: true
+
+notifiers:
+  - id: console
+    type: stdout
+```
+
+Then run hellbot normally:
+
+```bash
+go run ./cmd/hellbot
+```
+
+At startup you will see:
+
+```
+level=WARN msg="dev.mock_server is enabled — using built-in war scenario, not the real API"
+```
+
+The bot will serve all 9 frames, fire the 5 notifications through your configured notifiers, then stop cleanly.
+
+### Notes
+
+- `dev.mock_server` is mutually exclusive with `dev.api_url` — when `mock_server` is `true`, `api_url` is ignored.
+- The mock uses an in-memory store by default unless you configure a different `store` type. Using `memory` means state resets on every run, which is usually what you want for scenario testing.
+- The scenario is hardcoded in `internal/adapter/api/mock/mock.go`. Edit `warScenario()` there to customise the event sequence.
+
+---
+
+
 
 SQLite requires no external service — it's the simplest way to test persistent state locally.
 
