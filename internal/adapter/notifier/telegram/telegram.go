@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ametis70/hellbot/internal/domain"
+	"github.com/ametis70/hellbot/internal/port"
 )
 
 const apiBase = "https://api.telegram.org"
@@ -37,7 +38,7 @@ type update struct {
 }
 
 // TelegramNotifier implements port.Notifier by sending messages to a Telegram chat.
-// It also polls for bot commands and handles /test.
+// It also polls for bot commands and handles /test, /status, and /statistics.
 type TelegramNotifier struct {
 	opts      Options
 	client    *http.Client
@@ -45,6 +46,7 @@ type TelegramNotifier struct {
 	templates domain.Templates
 	cancel    context.CancelFunc
 	done      chan struct{}
+	provider  port.StatusProvider
 }
 
 // New creates a new TelegramNotifier, validates options, and starts the command polling loop.
@@ -189,11 +191,23 @@ func (n *TelegramNotifier) handleUpdate(u update) {
 		// Strip @botname suffix present in group chats.
 		cmd := strings.SplitN(raw, "@", 2)[0]
 
+		// Argument is the text after the command entity.
+		arg := strings.TrimSpace(u.Message.Text[entity.Offset+entity.Length:])
+
 		switch cmd {
 		case "/test":
 			n.handleTestCommand()
+		case "/status":
+			n.handleStatusCommand(arg)
+		case "/statistics":
+			n.handleStatisticsCommand()
 		}
 	}
+}
+
+// RegisterCommands implements port.Commander.
+func (n *TelegramNotifier) RegisterCommands(provider port.StatusProvider) {
+	n.provider = provider
 }
 
 // handleTestCommand sends a test message to the configured chat_id.
@@ -202,6 +216,54 @@ func (n *TelegramNotifier) handleTestCommand() {
 	err := n.sendMessage("✅ hellbot is connected and can send messages to this chat\\.")
 	if err != nil {
 		n.logger.Error("telegram notifier: /test failed", "error", err)
+	}
+}
+
+// handleStatusCommand responds to /status [faction].
+func (n *TelegramNotifier) handleStatusCommand(arg string) {
+	if n.provider == nil {
+		n.logger.Warn("telegram notifier: /status received but no status provider registered")
+		return
+	}
+
+	var filter *domain.Enemy
+	if arg != "" {
+		if enemy, ok := domain.ParseEnemy(arg); ok {
+			e := enemy
+			filter = &e
+		}
+	}
+
+	c, err := n.provider.LatestCampaign()
+	if err != nil {
+		n.logger.Error("telegram notifier: /status failed to fetch campaign", "error", err)
+		_ = n.sendMessage("⚠️ Could not retrieve war status\\.")
+		return
+	}
+
+	text := escape(domain.FormatStatus(c, filter))
+	if sendErr := n.sendMessage("```\n" + text + "\n```"); sendErr != nil {
+		n.logger.Error("telegram notifier: /status failed to send", "error", sendErr)
+	}
+}
+
+// handleStatisticsCommand responds to /statistics.
+func (n *TelegramNotifier) handleStatisticsCommand() {
+	if n.provider == nil {
+		n.logger.Warn("telegram notifier: /statistics received but no status provider registered")
+		return
+	}
+
+	c, err := n.provider.LatestCampaign()
+	if err != nil {
+		n.logger.Error("telegram notifier: /statistics failed to fetch campaign", "error", err)
+		_ = n.sendMessage("⚠️ Could not retrieve statistics\\.")
+		return
+	}
+
+	text := escape(domain.FormatStatistics(c))
+	if sendErr := n.sendMessage("```\n" + text + "\n```"); sendErr != nil {
+		n.logger.Error("telegram notifier: /statistics failed to send", "error", sendErr)
 	}
 }
 

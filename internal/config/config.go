@@ -34,11 +34,14 @@ type StdoutOptions struct {
 // DiscordOptions holds parsed options for the discord notifier.
 // Token and TokenFile are mutually exclusive — exactly one must be set.
 // ChannelID and ChannelIDFile are mutually exclusive — exactly one must be set.
+// GuildID is optional — when set, slash commands are registered as guild commands
+// (instant propagation). When empty, commands are registered globally (up to 1h delay).
 type DiscordOptions struct {
 	Token         string            `yaml:"token"`
 	TokenFile     string            `yaml:"token_file"`
 	ChannelID     string            `yaml:"channel_id"`
 	ChannelIDFile string            `yaml:"channel_id_file"`
+	GuildID       string            `yaml:"guild_id"`
 	Templates     *domain.Templates `yaml:"templates"`
 }
 
