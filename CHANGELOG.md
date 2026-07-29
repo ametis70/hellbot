@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/ametis70/hellbot/compare/v1.0.0...v1.1.0) (2026-07-29)
+
+
+### Features
+
+* add helm chart ([5eac921](https://github.com/ametis70/hellbot/commit/5eac9218c0af9d3806790842a2e5d57953200cb8))
+
 ## [1.0.0](https://github.com/ametis70/hellbot/compare/0.1.3...v1.0.0) (2026-07-29)
 
 
