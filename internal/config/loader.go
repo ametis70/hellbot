@@ -72,6 +72,40 @@ func parseTimezone(tz string) (*time.Location, error) {
 	return loc, nil
 }
 
+// ResolveWebhookOptions decodes, validates, and resolves webhook notifier options.
+func ResolveWebhookOptions(raw RawOptions) (WebhookOptions, error) {
+	opts := WebhookOptions{}
+	if raw == nil {
+		return opts, fmt.Errorf("webhook options are required")
+	}
+
+	data, err := yaml.Marshal(raw)
+	if err != nil {
+		return opts, fmt.Errorf("marshaling webhook options: %w", err)
+	}
+	if err := yaml.Unmarshal(data, &opts); err != nil {
+		return opts, fmt.Errorf("parsing webhook options: %w", err)
+	}
+
+	opts.URL = resolveEnvVars(opts.URL)
+	if opts.URL == "" {
+		return opts, fmt.Errorf("url is required")
+	}
+
+	if opts.SecretValueFile != "" {
+		val, err := readSecretFile(opts.SecretValueFile)
+		if err != nil {
+			return opts, fmt.Errorf("secret_value_file: %w", err)
+		}
+		opts.SecretValue = val
+		opts.SecretValueFile = ""
+	} else {
+		opts.SecretValue = resolveEnvVars(opts.SecretValue)
+	}
+
+	return opts, nil
+}
+
 // ResolveStdoutOptions decodes and validates stdout notifier options.
 func ResolveStdoutOptions(raw RawOptions) (StdoutOptions, error) {
 	opts := StdoutOptions{}
@@ -274,6 +308,10 @@ func Load(path string) (*Config, error) {
 			}
 		case NotifierTypeTelegram:
 			if _, err := ResolveTelegramOptions(n.Options); err != nil {
+				return nil, fmt.Errorf("notifier %q: %w", n.ID, err)
+			}
+		case NotifierTypeWebhook:
+			if _, err := ResolveWebhookOptions(n.Options); err != nil {
 				return nil, fmt.Errorf("notifier %q: %w", n.ID, err)
 			}
 		default:

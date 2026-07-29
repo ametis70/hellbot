@@ -14,6 +14,7 @@ import (
 	discordnotifier "github.com/ametis70/hellbot/internal/adapter/notifier/discord"
 	"github.com/ametis70/hellbot/internal/adapter/notifier/stdout"
 	telegramnotifier "github.com/ametis70/hellbot/internal/adapter/notifier/telegram"
+	webhooknotifier "github.com/ametis70/hellbot/internal/adapter/notifier/webhook"
 	"github.com/ametis70/hellbot/internal/adapter/store/memory"
 	sqlitestore "github.com/ametis70/hellbot/internal/adapter/store/sqlite"
 	valkeystore "github.com/ametis70/hellbot/internal/adapter/store/valkey"
@@ -113,6 +114,23 @@ func main() {
 			}
 			notifiers = append(notifiers, tn)
 			closers = append(closers, tn.Close)
+			logger.Info("registered notifier", "id", n.ID, "type", n.Type)
+		case config.NotifierTypeWebhook:
+			opts, err := config.ResolveWebhookOptions(n.Options)
+			if err != nil {
+				logger.Error("invalid webhook notifier options", "id", n.ID, "error", err)
+				os.Exit(1)
+			}
+			wn, err := webhooknotifier.New(webhooknotifier.Options{
+				URL:          opts.URL,
+				SecretHeader: opts.SecretHeader,
+				SecretValue:  opts.SecretValue,
+			}, logger)
+			if err != nil {
+				logger.Error("failed to create webhook notifier", "id", n.ID, "error", err)
+				os.Exit(1)
+			}
+			notifiers = append(notifiers, wn)
 			logger.Info("registered notifier", "id", n.ID, "type", n.Type)
 		}
 	}

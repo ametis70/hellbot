@@ -1,10 +1,18 @@
 package testutil
 
 import (
+	"io"
+	"log/slog"
 	"sync"
 
 	"github.com/ametis70/hellbot/internal/domain"
 )
+
+// DiscardLogger returns a logger that discards all output. Useful in tests that
+// don't care about log output.
+func DiscardLogger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(io.Discard, nil))
+}
 
 // MockFetcher implements port.Fetcher
 
