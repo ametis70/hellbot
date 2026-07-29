@@ -7,5 +7,6 @@ pkgs.mkShell {
     gotools
     gcc
     valkey
+    sqlite
   ];
 }

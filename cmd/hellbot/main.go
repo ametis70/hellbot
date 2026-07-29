@@ -14,6 +14,7 @@ import (
 	"github.com/ametis70/hellbot/internal/adapter/notifier/stdout"
 	telegramnotifier "github.com/ametis70/hellbot/internal/adapter/notifier/telegram"
 	"github.com/ametis70/hellbot/internal/adapter/store/memory"
+	sqlitestore "github.com/ametis70/hellbot/internal/adapter/store/sqlite"
 	valkeystore "github.com/ametis70/hellbot/internal/adapter/store/valkey"
 	"github.com/ametis70/hellbot/internal/app"
 	"github.com/ametis70/hellbot/internal/config"
@@ -146,6 +147,22 @@ func main() {
 		closers = append(closers, vs.Close)
 		store = vs
 		logger.Info("store initialized", "type", "valkey", "addr", opts.Addr)
+	case config.StoreTypeSQLite:
+		opts, err := config.ResolveSQLiteStoreOptions(cfg.Store.Options)
+		if err != nil {
+			logger.Error("invalid sqlite store options", "error", err)
+			os.Exit(1)
+		}
+		ss, err := sqlitestore.New(sqlitestore.Options{
+			Path: opts.Path,
+		})
+		if err != nil {
+			logger.Error("failed to open sqlite store", "error", err)
+			os.Exit(1)
+		}
+		closers = append(closers, ss.Close)
+		store = ss
+		logger.Info("store initialized", "type", "sqlite", "path", opts.Path)
 	default:
 		store = memory.New()
 		logger.Info("store initialized", "type", "memory")

@@ -25,6 +25,46 @@ go test -race ./...
 go build ./cmd/hellbot
 ```
 
+## Testing with SQLite
+
+SQLite requires no external service — it's the simplest way to test persistent state locally.
+
+Add a `store` block to your `config.yml`:
+
+```yaml
+store:
+  type: sqlite
+  options:
+    path: "./hellbot.db"
+```
+
+Run hellbot:
+
+```bash
+go run ./cmd/hellbot
+```
+
+You should see:
+
+```
+level=INFO msg="store initialized" type=sqlite path=./hellbot.db
+```
+
+Inspect the database with any SQLite client:
+
+```bash
+sqlite3 hellbot.db "SELECT payload FROM campaign;"
+sqlite3 hellbot.db "SELECT * FROM ongoing_events;"
+```
+
+Delete the file to reset state:
+
+```bash
+rm hellbot.db
+```
+
+---
+
 ## Testing with Valkey
 
 The dev shell includes `valkey-server` and `valkey-cli`. To test the `valkey` store locally:

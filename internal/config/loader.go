@@ -153,6 +153,26 @@ func ResolveTelegramOptions(raw RawOptions) (TelegramOptions, error) {
 	return opts, nil
 }
 
+// ResolveSQLiteStoreOptions decodes and validates SQLite store options.
+func ResolveSQLiteStoreOptions(raw RawOptions) (SQLiteStoreOptions, error) {
+	opts := SQLiteStoreOptions{
+		Path: "hellbot.db",
+	}
+	if raw == nil {
+		return opts, nil
+	}
+
+	data, err := yaml.Marshal(raw)
+	if err != nil {
+		return opts, fmt.Errorf("marshaling sqlite options: %w", err)
+	}
+	if err := yaml.Unmarshal(data, &opts); err != nil {
+		return opts, fmt.Errorf("parsing sqlite options: %w", err)
+	}
+	opts.Path = resolveEnvVars(opts.Path)
+	return opts, nil
+}
+
 // ResolveValkeyStoreOptions decodes and validates Valkey/Redis store options.
 func ResolveValkeyStoreOptions(raw RawOptions) (ValkeyStoreOptions, error) {
 	opts := ValkeyStoreOptions{
@@ -221,6 +241,10 @@ func Load(path string) (*Config, error) {
 		cfg.Store.Type = StoreTypeMemory
 	case StoreTypeValkey:
 		if _, err := ResolveValkeyStoreOptions(cfg.Store.Options); err != nil {
+			return nil, fmt.Errorf("store: %w", err)
+		}
+	case StoreTypeSQLite:
+		if _, err := ResolveSQLiteStoreOptions(cfg.Store.Options); err != nil {
 			return nil, fmt.Errorf("store: %w", err)
 		}
 	default:

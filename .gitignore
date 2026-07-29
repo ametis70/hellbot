@@ -41,3 +41,4 @@ config.yml
 
 *.rdb
 *.log
+*.db
