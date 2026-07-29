@@ -18,7 +18,7 @@ hellbot monitors the [HELLDIVERS™](https://www.arrowheadgamestudios.com/abouta
 - Polls the official Helldivers 1 API on a configurable interval
 - Detects when defend events, attack events, and wars start, succeed, or fail
 - Sends notifications to one or more configured notifiers simultaneously
-- Supports **Discord**, **Telegram**, and **stdout** as notification targets
+- Supports **Discord**, **Telegram**, **stdout**, and **webhook** as notification targets
 - Persists state across restarts via a configurable store (**memory**, **SQLite**, or **Valkey/Redis**)
 - Supports fully customizable message templates per notifier
 - Supports per-notifier timezone overrides for timestamp formatting

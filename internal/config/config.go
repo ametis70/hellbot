@@ -13,6 +13,7 @@ const (
 	NotifierTypeStdout   NotifierType = "stdout"
 	NotifierTypeDiscord  NotifierType = "discord"
 	NotifierTypeTelegram NotifierType = "telegram"
+	NotifierTypeWebhook  NotifierType = "webhook"
 )
 
 // RawOptions holds unparsed YAML options for a notifier.
@@ -23,6 +24,18 @@ type NotifierConfig struct {
 	ID      string       `yaml:"id"`
 	Type    NotifierType `yaml:"type"`
 	Options RawOptions   `yaml:"options"`
+}
+
+// WebhookOptions holds parsed options for the webhook notifier.
+type WebhookOptions struct {
+	// URL is the endpoint that will receive POST requests.
+	URL string `yaml:"url"`
+	// SecretHeader is the HTTP header name used for authentication (e.g. "Authorization").
+	// Leave empty to send no auth header.
+	SecretHeader string `yaml:"secret_header"`
+	// SecretValue is the value of the auth header. Supports ${ENV_VAR} interpolation.
+	SecretValue     string `yaml:"secret_value"`
+	SecretValueFile string `yaml:"secret_value_file"`
 }
 
 // StdoutOptions holds parsed options for the stdout notifier.

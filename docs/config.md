@@ -244,6 +244,109 @@ notifiers:
 
 ---
 
+### `webhook`
+
+POSTs a structured JSON payload to a configured URL on every event. Useful for integrating with custom services, n8n, Make, Zapier, or any HTTP endpoint.
+
+Unlike other notifiers, `webhook` does not use the template system — it always sends the full structured event data as JSON.
+
+**Options**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `url` | string | yes | Endpoint URL to POST to. Supports `${ENV_VAR}` interpolation. |
+| `secret_header` | string | no | HTTP header name for authentication (e.g. `Authorization`). |
+| `secret_value` | string | no | Value of the auth header. Supports `${ENV_VAR}` interpolation. |
+| `secret_value_file` | string | no | Path to a file containing the auth header value. |
+
+`secret_value` and `secret_value_file` are mutually exclusive.
+
+**Payload**
+
+Every request is a `POST` with `Content-Type: application/json`. The body shape is:
+
+```json
+{
+  "kind": "attack",
+  "transition": "started",
+  "attack_event": {
+    "season": 50,
+    "id": 100,
+    "enemy": "Cyborgs",
+    "points_max": 50000,
+    "points": 0,
+    "status": "active",
+    "players_at_start": 184,
+    "start_time": "2024-01-01T00:01:00Z",
+    "end_time": "2024-01-01T01:00:00Z",
+    "start_time_unix": 1704067260,
+    "end_time_unix": 1704070800
+  },
+  "defend_event": null,
+  "war_event": null
+}
+```
+
+`kind` is one of `attack`, `defend`, `war`. `transition` is one of `started`, `succeeded`, `failed`. Only the relevant event field is populated; the others are omitted.
+
+For `war` events the payload is:
+
+```json
+{
+  "kind": "war",
+  "transition": "succeeded",
+  "war_event": { "season": 50 }
+}
+```
+
+hellbot expects a `2xx` response. Any other status code is logged as an error.
+
+**Example**
+
+```yaml
+notifiers:
+  - id: "my-webhook"
+    type: webhook
+    options:
+      url: "https://example.com/hellbot/events"
+      secret_header: "Authorization"
+      secret_value: "${WEBHOOK_SECRET}"
+```
+
+**Example — file-based secret**
+
+```yaml
+notifiers:
+  - id: "my-webhook"
+    type: webhook
+    options:
+      url: "https://example.com/hellbot/events"
+      secret_header: "X-Webhook-Secret"
+      secret_value_file: "/run/secrets/webhook-secret"
+```
+
+**Example — n8n**
+
+In your n8n webhook node, set **Authentication** to **Header Auth** and configure a credential with:
+- **Name**: `Authorization`
+- **Value**: a secret token of your choice
+
+Then configure hellbot to match:
+
+```yaml
+notifiers:
+  - id: "n8n"
+    type: webhook
+    options:
+      url: "https://<your-n8n-host>/webhook/<webhook-id>"
+      secret_header: "Authorization"
+      secret_value: "${N8N_WEBHOOK_SECRET}"
+```
+
+The value of `secret_value` must match the **Value** field in the n8n credential exactly — no `Bearer` prefix unless you included it in n8n.
+
+---
+
 ## Templates
 
 Every notifier supports a `templates` block to override default message formats. All fields are optional — only set what you want to change, the rest uses the adapter's defaults.
