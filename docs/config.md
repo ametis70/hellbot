@@ -81,14 +81,7 @@ Sends event notifications to a Discord channel.
 
 Times in Discord messages use Discord's native timestamp format (`<t:UNIX:f>`), which renders in the viewer's local timezone automatically — no timezone config needed.
 
-**Slash commands**
-
-When `RegisterCommands` is called (automatic at startup), hellbot registers two slash commands in the configured channel's server:
-
-| Command | Description |
-|---|---|
-| `/status` | Shows war progress, faction status, and active events. Accepts an optional `faction` argument (`bugs`, `cyborgs`, `illuminate`) to filter to one faction. |
-| `/statistics` | Shows cumulative war statistics with all factions summed. |
+For available slash commands, see [commands.md](commands.md).
 
 **Example — env var**
 
@@ -133,15 +126,9 @@ Sends event notifications to a Telegram chat.
 | `timezone` | string | global `timezone` | Display timezone for timestamps. Overrides the global value. |
 | `templates` | object | see [Templates](#templates) | Override default message templates. |
 
-**Bot commands**
+`token` and `token_file` are mutually exclusive. Same for `chat_id` and `chat_id_file`.
 
-The bot automatically listens for commands in the configured chat:
-
-| Command | Description |
-|---|---|
-| `/test` | Sends a connectivity test message. |
-| `/status` | Shows war progress, faction status, and active events. Accepts an optional faction argument: `/status bugs`, `/status cyborgs`, `/status illuminate`. |
-| `/statistics` | Shows cumulative war statistics with all factions summed. |
+For available bot commands, see [commands.md](commands.md).
 
 **Example**
 
